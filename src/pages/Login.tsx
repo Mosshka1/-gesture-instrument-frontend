@@ -15,7 +15,8 @@ function Login() {
       const data = await loginUser(email, password);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/instrument');
+      const tutorialDone = localStorage.getItem('tutorialCompleted');
+      navigate(tutorialDone ? '/play' : '/tutorial');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Щось пішло не так');
     }

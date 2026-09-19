@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { getPresets, createPreset, deletePreset } from '../api';
 
 declare global {
   interface Window {
@@ -41,28 +40,23 @@ function computeGestureParams(landmarks: any[]) {
   const horizontal = mapRange(wrist.x, 0.1, 0.9, 0, 1);
   const span = mapRange(distance(landmarks[4], landmarks[20]) / handSize, 0.5, 2.2, 0, 1);
 
-  // Щипки великого пальця з кожним іншим пальцем окремо
   const pinchIndex = distance(landmarks[4], landmarks[8]) / handSize;
   const pinchMiddle = distance(landmarks[4], landmarks[12]) / handSize;
   const pinchRing = distance(landmarks[4], landmarks[16]) / handSize;
   const pinchPinky = distance(landmarks[4], landmarks[20]) / handSize;
 
-  // Жест "перемога" (V)
   const indexExtended = distance(landmarks[8], wrist) / handSize > 1.8;
   const middleExtended = distance(landmarks[12], wrist) / handSize > 1.8;
   const ringCurled = distance(landmarks[16], wrist) / handSize < 1.4;
   const pinkyCurled = distance(landmarks[20], wrist) / handSize < 1.4;
   const isPeaceSign = indexExtended && middleExtended && ringCurled && pinkyCurled;
 
-  // Нахил (поворот) долоні: кут лінії від основи вказівного до основи мізинця
   const rotationAngle = Math.atan2(
     landmarks[17].y - landmarks[5].y,
     landmarks[17].x - landmarks[5].x
   );
-  // Нормалізуємо в діапазон -1 (нахил в один бік) .. 1 (нахил в інший)
   const tilt = mapRange(rotationAngle, -Math.PI / 2, Math.PI / 2, -1, 1);
 
-  // Розмір руки в кадрі — проксі для відстані до камери (більше = ближче)
   const proximity = mapRange(handSize, 0.15, 0.35, 0, 1);
 
   return {
@@ -138,12 +132,6 @@ type Preset = {
   smoothing: number;
 };
 
-type SavedPreset = {
-  id: number;
-  name: string;
-  soundType: string;
-};
-
 type Particle = {
   x: number;
   y: number;
@@ -183,12 +171,11 @@ const PRESETS: Preset[] = [
   },
 ];
 
-// Музичні інтервали для кожного пальця (відносно кореневої ноти) — грають ніби акорд по частинах
 const FINGER_INTERVALS = {
-  index: 1, // корінь
-  middle: 1.25, // велика терція
-  ring: 1.5, // квінта
-  pinky: 2, // октава
+  index: 1,
+  middle: 1.25,
+  ring: 1.5,
+  pinky: 2,
 };
 
 type VoiceEvents = {
@@ -216,7 +203,7 @@ class HandVoice {
   wasPinching = { index: false, middle: false, ring: false, pinky: false };
   wasPeaceSign = false;
 
-  constructor(audioCtx: AudioContext, preset: Preset) {
+  constructor(audioCtx: AudioContext, preset: Preset, destination: AudioNode) {
     this.audioCtx = audioCtx;
     this.preset = preset;
 
@@ -235,13 +222,11 @@ class HandVoice {
     this.delayFeedback.gain.value = 0.3;
     this.wetGain.gain.value = 0;
 
-    // Сухий сигнал: осцилятор -> фільтр -> гучність -> панорама -> вихід
     this.oscillator.connect(this.filter);
     this.filter.connect(this.gain);
     this.gain.connect(this.panner);
-    this.panner.connect(audioCtx.destination);
+    this.panner.connect(destination);
 
-    // "Мокрий" сигнал (відлуння): гучність -> затримка -> (петля зворотного зв'язку) -> wetGain -> панорама
     this.gain.connect(this.delay);
     this.delay.connect(this.delayFeedback);
     this.delayFeedback.connect(this.delay);
@@ -285,18 +270,20 @@ class HandVoice {
     this.smoothedFilter += (targetFilter - this.smoothedFilter) * smoothing;
     this.filter.frequency.value = this.smoothedFilter;
 
-    // Нахил руки -> стереопанорама (плавно згладжено, щоб не смикало звук)
     this.smoothedTilt += (tilt - this.smoothedTilt) * 0.1;
     this.panner.pan.value = Math.max(-1, Math.min(1, this.smoothedTilt));
 
-    // Близькість до камери -> скільки "мокрого" відлуння додається (далі = більше відлуння)
     const targetWet = mapRange(proximity, 0, 1, 0.35, 0);
     this.smoothedWet += (targetWet - this.smoothedWet) * 0.08;
     this.wetGain.gain.value = this.smoothedWet;
 
     const events: VoiceEvents = { pluckedFinger: null, hit: false };
 
-    const checkPinch = (key: keyof typeof this.wasPinching, value: number, fingerName: 'index' | 'middle' | 'ring' | 'pinky') => {
+    const checkPinch = (
+      key: keyof typeof this.wasPinching,
+      value: number,
+      fingerName: 'index' | 'middle' | 'ring' | 'pinky'
+    ) => {
       const isPinching = value < PINCH_THRESHOLD;
       if (isPinching && !this.wasPinching[key]) {
         const interval = FINGER_INTERVALS[fingerName];
@@ -385,68 +372,71 @@ function Instrument() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
   const voicesRef = useRef<HandVoice[]>([]);
   const particlesRef = useRef<Particle[]>([]);
-  const presetRef = useRef<Preset>(PRESETS[0]);
-  const [audioStarted, setAudioStarted] = useState(false);
-  const [activePresetId, setActivePresetId] = useState(PRESETS[0].id);
 
-  const [savedPresets, setSavedPresets] = useState<SavedPreset[]>([]);
-  const [presetName, setPresetName] = useState('');
+  const initialPresetId = localStorage.getItem('selectedSoundType') || PRESETS[0].id;
+  const initialPreset = PRESETS.find((p) => p.id === initialPresetId) || PRESETS[0];
+
+  const presetRef = useRef<Preset>(initialPreset);
+  const [audioStarted, setAudioStarted] = useState(false);
+  const [activePresetId, setActivePresetId] = useState(initialPreset.id);
 
   const startAudio = () => {
     if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioContext();
+      const ctx = new AudioContext();
+      const masterGain = ctx.createGain();
+      masterGain.connect(ctx.destination);
+      audioCtxRef.current = ctx;
+      masterGainRef.current = masterGain;
     }
     setAudioStarted(true);
+  };
+
+  const startRecording = () => {
+    if (!audioCtxRef.current || !masterGainRef.current) return;
+
+    const streamDestination = audioCtxRef.current.createMediaStreamDestination();
+    masterGainRef.current.connect(streamDestination);
+
+    const recorder = new MediaRecorder(streamDestination.stream);
+    recordedChunksRef.current = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+    };
+
+    recorder.onstop = async () => {
+      const blob = new Blob(recordedChunksRef.current, { type: 'audio/webm' });
+      const name = prompt('Назви свою мелодію:', 'Моя мелодія') || 'Без назви';
+      try {
+        const { uploadRecording } = await import('../api');
+        await uploadRecording(name, blob);
+        alert('Запис збережено! Подивись у "Мої записи"');
+      } catch (error) {
+        console.error(error);
+        alert('Не вдалось зберегти запис');
+      }
+    };
+
+    recorder.start();
+    mediaRecorderRef.current = recorder;
+    setIsRecording(true);
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
   };
 
   const selectPreset = (preset: Preset) => {
     presetRef.current = preset;
     setActivePresetId(preset.id);
     voicesRef.current.forEach((voice) => voice.setPreset(preset));
-  };
-
-  const loadPresets = async () => {
-    try {
-      const presets = await getPresets();
-      setSavedPresets(presets);
-    } catch (error) {
-      console.error('Не вдалось завантажити пресети', error);
-    }
-  };
-
-  useEffect(() => {
-    loadPresets();
-  }, []);
-
-  const handleSavePreset = async () => {
-    if (!presetName.trim()) {
-      alert('Введи назву пресету');
-      return;
-    }
-    try {
-      await createPreset(presetName, activePresetId);
-      setPresetName('');
-      loadPresets();
-    } catch (error) {
-      console.error('Не вдалось зберегти пресет', error);
-      alert('Не вдалось зберегти пресет');
-    }
-  };
-
-  const handleDeletePreset = async (id: number) => {
-    try {
-      await deletePreset(id);
-      loadPresets();
-    } catch (error) {
-      console.error('Не вдалось видалити пресет', error);
-    }
-  };
-
-  const handleSelectSavedPreset = (soundType: string) => {
-    const preset = PRESETS.find((p) => p.id === soundType);
-    if (preset) selectPreset(preset);
   };
 
   useEffect(() => {
@@ -502,7 +492,7 @@ function Instrument() {
 
       if (audioCtxRef.current) {
         while (voicesRef.current.length < handsFound.length) {
-          voicesRef.current.push(new HandVoice(audioCtxRef.current, presetRef.current));
+          voicesRef.current.push(new HandVoice(audioCtxRef.current, presetRef.current, masterGainRef.current!));
         }
         while (voicesRef.current.length > handsFound.length) {
           const voice = voicesRef.current.pop();
@@ -557,7 +547,7 @@ function Instrument() {
 
   return (
     <div style={{ fontFamily: 'sans-serif', padding: 20 }}>
-      <h1>Музичний інструмент — тест</h1>
+      <h1>Грати</h1>
 
       {!audioStarted && (
         <button onClick={startAudio} style={{ fontSize: 18, padding: '10px 20px' }}>
@@ -565,12 +555,29 @@ function Instrument() {
         </button>
       )}
 
+      {audioStarted && (
+        <button
+          onClick={isRecording ? stopRecording : startRecording}
+          style={{
+            fontSize: 16,
+            padding: '10px 20px',
+            marginLeft: 10,
+            background: isRecording ? '#e74c3c' : '#333',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 6,
+            cursor: 'pointer',
+          }}
+        >
+          {isRecording ? '⏹ Зупинити запис' : '● Почати запис'}
+        </button>
+      )}
+
       <p style={{ color: '#666', fontSize: 14, lineHeight: 1.7 }}>
         Кулак/долоня + висота руки — гучність фону · ліво-право — нота · розмах пальців — тембр<br />
-        <b>Щипок великим до кожного пальця</b> — грає ноту гами (вказівний=корінь, середній=терція, безіменний=квінта, мізинець=октава)<br />
+        <b>Щипок великим до кожного пальця</b> — грає ноту гами<br />
         <b>Жест "перемога" (V)</b> — перкусійний удар<br />
-        <b>Нахил долоні</b> — панорама (ліво/право у звуці)<br />
-        <b>Наближення/віддалення руки від камери</b> — сухий звук / відлуння
+        <b>Нахил долоні</b> — панорама · <b>наближення/віддалення</b> — відлуння
       </p>
 
       <div style={{ display: 'flex', gap: 8, margin: '16px 0' }}>
@@ -588,47 +595,6 @@ function Instrument() {
           >
             {preset.name}
           </button>
-        ))}
-      </div>
-
-      <div style={{ margin: '16px 0', padding: 16, background: '#f5f5f5', borderRadius: 8 }}>
-        <h3 style={{ marginTop: 0 }}>Мої збережені пресети</h3>
-
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <input
-            type="text"
-            placeholder="Назва пресету"
-            value={presetName}
-            onChange={(e) => setPresetName(e.target.value)}
-            style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', flex: 1 }}
-          />
-          <button
-            onClick={handleSavePreset}
-            style={{ padding: '8px 14px', background: '#4DC9B0', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}
-          >
-            + Зберегти поточний
-          </button>
-        </div>
-
-        {savedPresets.length === 0 && <p style={{ color: '#888' }}>Ще нема збережених пресетів</p>}
-
-        {savedPresets.map((preset) => (
-          <div
-            key={preset.id}
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #ddd' }}
-          >
-            <span>
-              {preset.name} <span style={{ color: '#888', fontSize: 12 }}>({preset.soundType})</span>
-            </span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => handleSelectSavedPreset(preset.soundType)} style={{ cursor: 'pointer' }}>
-                Обрати
-              </button>
-              <button onClick={() => handleDeletePreset(preset.id)} style={{ cursor: 'pointer', color: 'red' }}>
-                Видалити
-              </button>
-            </div>
-          </div>
         ))}
       </div>
 
