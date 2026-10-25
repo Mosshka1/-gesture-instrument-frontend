@@ -9,6 +9,7 @@ import Tutorial from './pages/Tutorial';
 import Recordings from './pages/Recordings';
 import Sounds from './pages/Sounds';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
@@ -17,6 +18,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -41,6 +43,7 @@ function App() {
         <Route path="*" element={<Navigate to="/play" />} />
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

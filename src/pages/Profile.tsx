@@ -128,6 +128,7 @@ function Profile() {
                 <Link to="/presets">▤ Збережені пресети</Link>
                 <Link to="/recordings">● Записи</Link>
                 <Link to="/sounds">♪ Власні звуки</Link>
+                <Link to="/tutorial">? Як грати (туторіал)</Link>
               </div>
             </div>
           </div>

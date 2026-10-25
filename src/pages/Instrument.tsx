@@ -83,7 +83,7 @@ function Instrument() {
   const meta = getModeMeta(modeId);
 
   // ---------- трекінг руки ----------
-  const { videoRef, canvasRef, status, fps } = useHandTracking((handsLm, ctx2d, canvas) => {
+  const { videoRef, canvasRef, status, fps, aspect } = useHandTracking((handsLm, ctx2d, canvas) => {
     const now = performance.now();
     lastLandmarksRef.current = handsLm.length ? handsLm[0] : null;
     const hands = trackerRef.current.process(handsLm, calRef.current, now);
@@ -205,6 +205,7 @@ function Instrument() {
   const startAudio = () => {
     if (audioCtxRef.current) return;
     const ctx = new AudioContext();
+    ctx.resume().catch(() => {});
     const master = ctx.createGain();
     master.gain.value = 0.9;
     const analyser = ctx.createAnalyser();
@@ -401,7 +402,8 @@ function Instrument() {
     };
     recorder.onstop = () => {
       const duration = Math.round((Date.now() - recStartRef.current) / 1000);
-      const blob = new Blob(recChunksRef.current, { type: 'audio/webm' });
+      // Safari записує в mp4, Chrome — у webm: беремо справжній тип, який видав рекордер
+      const blob = new Blob(recChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
       try {
         master.disconnect(dest);
       } catch {
@@ -441,6 +443,31 @@ function Instrument() {
       setRecSaving(false);
     }
   };
+
+  // не даємо екрану телефона згасати під час гри
+  useEffect(() => {
+    if (!audioStarted) return;
+    let lock: any = null;
+    let cancelled = false;
+    const request = async () => {
+      try {
+        const wl = (navigator as any).wakeLock;
+        if (wl && !cancelled && document.visibilityState === 'visible') lock = await wl.request('screen');
+      } catch {
+        // не підтримується або відхилено — нічого страшного
+      }
+    };
+    request();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') request();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
+      lock?.release?.().catch?.(() => {});
+    };
+  }, [audioStarted]);
 
   // ---------- пресети ----------
   const buildSettings = () => ({
@@ -519,6 +546,8 @@ function Instrument() {
     else stageRef.current?.requestFullscreen?.();
   };
 
+  const canFullscreen = typeof document.documentElement.requestFullscreen === 'function';
+
   const instrumentSounds = useMemo(() => sounds.filter((s) => s.type === 'instrument'), [sounds]);
   const backgroundSounds = useMemo(() => sounds.filter((s) => s.type === 'background'), [sounds]);
 
@@ -538,14 +567,14 @@ function Instrument() {
   return (
     <>
       <PageHeader crumb="Інструмент / Жива сесія" title="Грати">
-        <span className="pill">
+        <span className="pill keep">
           <span className={'dot' + (status === 'ready' ? '' : status === 'error' ? ' off' : ' wait')} />
           {cameraText}
         </span>
         <span className="pill">
           Пресет: <b>{sessionPreset ? sessionPreset.name : 'без пресету'}</b>
         </span>
-        <button className="btn sm" onClick={() => { setPresetName(''); setSaveError(''); setShowSave(true); }} disabled={!audioStarted}>
+        <button className="btn sm hide-mobile" onClick={() => { setPresetName(''); setSaveError(''); setShowSave(true); }} disabled={!audioStarted}>
           Зберегти пресет
         </button>
       </PageHeader>
@@ -562,7 +591,7 @@ function Instrument() {
 
         <div className="play-grid">
           {/* ---------- сцена з камерою ---------- */}
-          <div className="stage" ref={stageRef}>
+          <div className="stage" ref={stageRef} style={{ aspectRatio: String(aspect), width: `min(100%, calc(75svh * ${aspect}))` }}>
             <video ref={videoRef} playsInline muted />
             <canvas ref={canvasRef} width={640} height={480} />
 
@@ -595,7 +624,7 @@ function Instrument() {
               <div className="stage-overlay">
                 <div>
                   <h3>Готова грати?</h3>
-                  <p>Браузер дозволяє звук лише після кліку. Натисни кнопку — і рухай рукою перед камерою.</p>
+                  <p>Браузер дозволяє звук лише після кліку. Натисни кнопку — і рухай рукою перед камерою. На iPhone вимкни беззвучний режим (перемикач збоку), інакше звуку не буде.</p>
                   <button className="btn primary" style={{ padding: '14px 28px', fontSize: 16 }} onClick={startAudio}>
                     ▶ Увімкнути звук
                   </button>
@@ -698,15 +727,17 @@ function Instrument() {
               <button className="stage-btn" title="Налаштування звуку" onClick={() => setShowSettings((v) => !v)}>
                 <IconGear />
               </button>
-              <button className="stage-btn" title="На весь екран" onClick={toggleFullscreen}>
-                <IconFullscreen />
-              </button>
+              {canFullscreen && (
+                <button className="stage-btn" title="На весь екран" onClick={toggleFullscreen}>
+                  <IconFullscreen />
+                </button>
+              )}
               {isRecording ? (
-                <button className="btn rec" style={{ height: 46 }} onClick={stopRecording}>
-                  ■ Зупинити запис
+                <button className="btn rec rec-btn" onClick={stopRecording}>
+                  ■ Стоп
                 </button>
               ) : (
-                <button className="btn rec" style={{ height: 46 }} onClick={startRecording} disabled={!audioStarted}>
+                <button className="btn rec rec-btn" onClick={startRecording} disabled={!audioStarted}>
                   ● Записати
                 </button>
               )}

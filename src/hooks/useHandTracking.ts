@@ -24,6 +24,7 @@ export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
 
   const [status, setStatus] = useState<CameraStatus>('starting');
   const [fps, setFps] = useState(0);
+  const [aspect, setAspect] = useState(4 / 3);
 
   // Поріг упевненості можна міняти "на льоту"
   useEffect(() => {
@@ -50,7 +51,8 @@ export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
     const c0 = Math.min(0.95, Math.max(0.2, confidenceRef.current / 100));
     hands.setOptions({
       maxNumHands: 2,
-      modelComplexity: 1,
+      // на телефонах використовуємо легшу модель — вищий FPS і менше нагрівання
+      modelComplexity: /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent) ? 0 : 1,
       minDetectionConfidence: c0,
       minTrackingConfidence: Math.max(0.2, c0 - 0.1),
     });
@@ -62,6 +64,14 @@ export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
+
+      // підлаштовуємо полотно під реальні пропорції відео (на телефоні кадр може бути вертикальним)
+      const video = videoRef.current;
+      if (video && video.videoWidth && (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight)) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        setAspect(video.videoWidth / video.videoHeight);
+      }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -105,5 +115,5 @@ export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
     };
   }, []);
 
-  return { videoRef, canvasRef, status, fps };
+  return { videoRef, canvasRef, status, fps, aspect };
 }

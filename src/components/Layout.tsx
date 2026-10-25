@@ -34,11 +34,11 @@ function Layout() {
 
         <div className="side-spacer" />
 
-        <NavLink to="/tutorial" className={cls} title="Як грати">
+        <NavLink to="/tutorial" className={(s) => cls(s) + ' side-help'} title="Як грати">
           <IconHelp />
           Туторіал
         </NavLink>
-        <NavLink to="/profile" title="Профіль" style={{ marginTop: 8 }}>
+        <NavLink to="/profile" title="Профіль" className="side-profile">
           {({ isActive }) => <div className={'avatar-sm' + (isActive ? ' active' : '')}>{initials(user?.fullName)}</div>}
         </NavLink>
       </nav>

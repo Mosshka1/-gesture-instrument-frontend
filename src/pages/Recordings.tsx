@@ -177,6 +177,7 @@ function Recordings() {
                     <div className="rec-meta">
                       {formatDate(rec.createdAt)}
                       {meta ? ` · ${meta.name}` : ''}
+                      {rec.durationSec != null ? ` · ${formatDuration(rec.durationSec)}` : ''}
                     </div>
                   </div>
 

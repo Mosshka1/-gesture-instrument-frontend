@@ -9,12 +9,14 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [slow, setSlow] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    const slowTimer = setTimeout(() => setSlow(true), 4000);
     try {
       const data = await loginUser(email, password);
       localStorage.setItem('token', data.token);
@@ -23,6 +25,8 @@ function Login() {
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
+      clearTimeout(slowTimer);
+      setSlow(false);
       setLoading(false);
     }
   };
@@ -48,6 +52,7 @@ function Login() {
           <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
 
           {error && <div className="error-box">{error}</div>}
+          {slow && <div className="ok-box">Сервер прокидається після простою — це може тривати до хвилини. Зачекай, будь ласка…</div>}
 
           <button type="submit" className="btn primary block" style={{ marginTop: 22, padding: 15 }} disabled={loading}>
             {loading ? 'Входимо…' : 'Увійти →'}

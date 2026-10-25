@@ -15,6 +15,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Якщо токен прострочений — повертаємо на сторінку входу (окрім самих запитів входу)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const url: string = error?.config?.url || '';
+    const isAuthCall = url.startsWith('/auth/login') || url.startsWith('/auth/google') || url.startsWith('/auth/register');
+    if (error?.response?.status === 401 && !isAuthCall && localStorage.getItem('token')) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export type ApiUser = {
   id: number;
   fullName: string;
@@ -134,7 +149,8 @@ export async function uploadRecording(name: string, blob: Blob, mode?: string, d
   formData.append('name', name);
   if (mode) formData.append('mode', mode);
   if (durationSec !== undefined) formData.append('durationSec', String(durationSec));
-  formData.append('audio', blob, 'recording.webm');
+  const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
+  formData.append('audio', blob, `recording.${ext}`);
 
   const response = await api.post('/recordings', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

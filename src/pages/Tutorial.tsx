@@ -31,7 +31,7 @@ function Tutorial() {
   const holdStartRef = useRef<number | null>(null);
   const isFinished = currentStep >= STEPS.length;
 
-  const { videoRef, canvasRef, status } = useHandTracking((handsFound) => {
+  const { videoRef, canvasRef, status, aspect } = useHandTracking((handsFound) => {
     if (isFinished || handsFound.length === 0) {
       holdStartRef.current = null;
       setProgress(0);
@@ -78,7 +78,7 @@ function Tutorial() {
       <div className="page-body">
         <div className="tut-grid">
           <div>
-            <div className="stage">
+            <div className="stage" style={{ aspectRatio: String(aspect), width: `min(100%, calc(75svh * ${aspect}))` }}>
               <video ref={videoRef} playsInline muted />
               <canvas ref={canvasRef} width={640} height={480} />
               <div className={'stage-badge tl' + (status === 'ready' ? '' : ' idle')}>
