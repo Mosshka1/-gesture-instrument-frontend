@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 import CalibrationWizard from '../components/CalibrationWizard';
+import LooperPanel from '../components/LooperPanel';
+import { Looper } from '../audio/looper';
 import { IconFullscreen, IconGear } from '../components/Icons';
 import { useHandTracking } from '../hooks/useHandTracking';
 import { HandTracker } from '../audio/features';
@@ -54,12 +56,16 @@ function Instrument() {
   const [recName, setRecName] = useState('');
   const [recSaving, setRecSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  const [looper, setLooper] = useState<Looper | null>(null);
+  const [looperVersion, setLooperVersion] = useState(0);
 
   // ---------- ref-и (їх читає аудіо-код у кожному кадрі) ----------
   const stageRef = useRef<HTMLDivElement>(null);
   const waveRef = useRef<HTMLCanvasElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<GainNode | null>(null);
+  const instRef = useRef<GainNode | null>(null);
+  const looperRef = useRef<Looper | null>(null);
   const wetRef = useRef<GainNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const modeRef = useRef<ModeVoice | null>(null);
@@ -221,10 +227,17 @@ function Instrument() {
     wetOut.gain.value = 0.7;
     wetIn.connect(conv);
     conv.connect(wetOut);
-    wetOut.connect(master);
+    // весь звук інструмента проходить через instOut: звідси лупер записує шари (без самих петель)
+    const instOut = ctx.createGain();
+    instOut.connect(master);
+    wetOut.connect(instOut);
 
     audioCtxRef.current = ctx;
     masterRef.current = master;
+    instRef.current = instOut;
+    const lp = new Looper(ctx, instOut, master, () => setLooperVersion((v) => v + 1));
+    looperRef.current = lp;
+    setLooper(lp);
     wetRef.current = wetIn;
     analyserRef.current = analyser;
     setAudioStarted(true);
@@ -236,7 +249,7 @@ function Instrument() {
     const ctx = audioCtxRef.current!;
     const mode = createMode(modeId, {
       ctx,
-      dry: masterRef.current!,
+      dry: instRef.current!,
       wet: wetRef.current!,
       getOpts: () => optsRef.current,
       getCal: () => calRef.current,
@@ -377,6 +390,8 @@ function Instrument() {
         // ігноруємо
       }
       bgSourceRef.current?.src.stop?.();
+      looperRef.current?.dispose();
+      looperRef.current = null;
       audioCtxRef.current?.close().catch(() => {});
       audioCtxRef.current = null;
     };
@@ -746,6 +761,7 @@ function Instrument() {
 
           {/* ---------- права панель ---------- */}
           <div>
+            <LooperPanel looper={looper} modeName={meta.name} version={looperVersion} />
             <div className="panel">
               <div className="panel-head">
                 <h3>Параметри звуку</h3>
