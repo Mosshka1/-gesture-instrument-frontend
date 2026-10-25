@@ -2128,3 +2128,14 @@ table.table {
     text-overflow: ellipsis;
   }
 }
+
+/* Бібліотека Freesound */
+.fs-search { display: flex; gap: 10px; }
+.fs-search .input { flex: 1; min-width: 0; }
+.fs-item { gap: 8px; flex-wrap: wrap; }
+.fs-item .btn.sm { padding: 6px 10px; font-size: 12px; white-space: nowrap; }
+.credit { color: var(--muted); font-size: 11px; font-weight: 400; }
+@media (max-width: 820px) {
+  .fs-search { flex-direction: column; }
+  .fs-item .nm { flex-basis: calc(100% - 52px); }
+}

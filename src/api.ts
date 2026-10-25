@@ -63,7 +63,20 @@ export type ApiSound = {
   name: string;
   fileName: string;
   type: 'instrument' | 'background';
+  author?: string | null;
+  license?: string | null;
+  sourceUrl?: string | null;
   createdAt: string;
+};
+
+export type FreesoundResult = {
+  id: number;
+  name: string;
+  author: string;
+  license: string;
+  duration: number;
+  previewUrl: string;
+  url: string;
 };
 
 export function getErrorMessage(err: any, fallback = 'Щось пішло не так'): string {
@@ -190,7 +203,26 @@ export async function deleteSound(id: number) {
 }
 
 export function uploadUrl(fileName: string) {
+  // звуки з Freesound зберігаються як "fs:<id>" і віддаються через бекенд
+  if (fileName.startsWith('fs:')) return `${API_BASE_URL}/freesound/preview/${fileName.slice(3)}`;
   return `${API_BASE_URL}/uploads/${fileName}`;
+}
+
+export async function searchFreesound(q: string, page = 1) {
+  const response = await api.get('/freesound/search', { params: { q, page } });
+  return response.data as { results: FreesoundResult[]; count: number; hasMore: boolean };
+}
+
+export async function addFreesoundSound(r: FreesoundResult, type: 'instrument' | 'background'): Promise<ApiSound> {
+  const response = await api.post('/sounds/freesound', {
+    freesoundId: r.id,
+    name: r.name.replace(/\.[a-z0-9]{2,4}$/i, ''),
+    type,
+    author: r.author,
+    license: r.license,
+    sourceUrl: r.url,
+  });
+  return response.data.sound;
 }
 
 export default api;

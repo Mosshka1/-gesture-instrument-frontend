@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import { IconTrash } from '../components/Icons';
-import { deleteSound, getErrorMessage, getSounds, uploadSound, uploadUrl } from '../api';
-import type { ApiSound } from '../api';
+import { addFreesoundSound, deleteSound, getErrorMessage, getSounds, searchFreesound, uploadSound, uploadUrl } from '../api';
+import type { ApiSound, FreesoundResult } from '../api';
 
 type SoundType = 'instrument' | 'background';
 
@@ -110,7 +110,14 @@ function SoundSection({
               <button className={'icon-btn' + (playingId === s.id ? ' active' : '')} onClick={() => toggle(s)} title="Прослухати">
                 {playingId === s.id ? '❚❚' : '▶'}
               </button>
-              <span className="nm">{s.name}</span>
+              <span className="nm">
+                {s.name}
+                {s.author && (
+                  <small className="credit">
+                    {' '}· {s.author}{s.license ? `, ${s.license}` : ''}
+                  </small>
+                )}
+              </span>
               <button className="icon-btn danger" onClick={() => remove(s)} title="Видалити">
                 <IconTrash />
               </button>
@@ -118,6 +125,121 @@ function SoundSection({
           ))
         )}
       </div>
+    </div>
+  );
+}
+
+function FreesoundLibrary({ onAdded }: { onAdded: () => void }) {
+  const [q, setQ] = useState('');
+  const [results, setResults] = useState<FreesoundResult[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [searched, setSearched] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [addedIds, setAddedIds] = useState<number[]>([]);
+  const [playingId, setPlayingId] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => () => audioRef.current?.pause(), []);
+
+  const run = async (term: string, pg: number) => {
+    if (!term) return;
+    setBusy(true);
+    setError('');
+    try {
+      const data = await searchFreesound(term, pg);
+      setResults((prev) => (pg === 1 ? data.results : [...prev, ...data.results]));
+      setHasMore(data.hasMore);
+      setPage(pg);
+      setSearched(term);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Не вдалось знайти звуки'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggle = (r: FreesoundResult) => {
+    audioRef.current?.pause();
+    if (playingId === r.id) {
+      setPlayingId(null);
+      return;
+    }
+    const audio = new Audio(r.previewUrl);
+    audio.onended = () => setPlayingId(null);
+    audio.play().catch(() => setError('Не вдалось відтворити'));
+    audioRef.current = audio;
+    setPlayingId(r.id);
+  };
+
+  const add = async (r: FreesoundResult, type: 'instrument' | 'background') => {
+    try {
+      await addFreesoundSound(r, type);
+      setAddedIds((a) => [...a, r.id]);
+      onAdded();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <h2 className="card-title">Бібліотека Freesound</h2>
+      <p className="hint">
+        Шукай звуки (англійською працює найкраще: «piano», «kick», «guitar», «lofi loop») і додавай їх до себе. Показуємо лише вільні
+        ліцензії CC0 та CC-BY, автор зберігається поруч зі звуком.
+      </p>
+      <form
+        className="fs-search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          run(q.trim(), 1);
+        }}
+      >
+        <input className="input" value={q} placeholder="Що шукаємо?" onChange={(e) => setQ(e.target.value)} />
+        <button className="btn primary" type="submit" disabled={busy || !q.trim()}>
+          {busy && page === 1 ? 'Шукаємо…' : 'Знайти'}
+        </button>
+      </form>
+
+      {error && <div className="error-box">{error}</div>}
+
+      {searched && !busy && results.length === 0 && !error && <p className="hint" style={{ marginTop: 16 }}>Нічого не знайшли за «{searched}».</p>}
+
+      <div style={{ marginTop: results.length ? 16 : 0 }}>
+        {results.map((r) => (
+          <div className="sound-item fs-item" key={r.id}>
+            <button className={'icon-btn' + (playingId === r.id ? ' active' : '')} onClick={() => toggle(r)} title="Прослухати">
+              {playingId === r.id ? '❚❚' : '▶'}
+            </button>
+            <span className="nm">
+              {r.name}
+              <small className="credit">
+                {' '}· {r.duration.toFixed(1)} с · {r.author} · {r.license === 'Creative Commons 0' ? 'CC0' : 'CC-BY'}
+              </small>
+            </span>
+            {addedIds.includes(r.id) ? (
+              <span className="pill">додано</span>
+            ) : (
+              <>
+                <button className="btn sm" onClick={() => add(r, 'instrument')} title="Додати як звук інструмента">
+                  + інструмент
+                </button>
+                <button className="btn sm" onClick={() => add(r, 'background')} title="Додати як фонову петлю">
+                  + фон
+                </button>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {hasMore && (
+        <button className="btn block" style={{ marginTop: 12 }} onClick={() => run(searched, page + 1)} disabled={busy}>
+          {busy ? 'Завантажуємо…' : 'Показати ще'}
+        </button>
+      )}
     </div>
   );
 }
@@ -144,6 +266,7 @@ function Sounds() {
 
       <div className="page-body">
         {error && <div className="error-box" style={{ marginTop: 0, marginBottom: 16 }}>{error}</div>}
+        <FreesoundLibrary onAdded={load} />
         <div className="two-col">
           <SoundSection
             type="instrument"
