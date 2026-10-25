@@ -2,10 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Instrument from './pages/Instrument';
+import Modes from './pages/Modes';
 import Presets from './pages/Presets';
 import Profile from './pages/Profile';
 import Tutorial from './pages/Tutorial';
 import Recordings from './pages/Recordings';
+import Sounds from './pages/Sounds';
 import Layout from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -28,8 +30,10 @@ function App() {
           }
         >
           <Route path="/play" element={<Instrument />} />
+          <Route path="/modes" element={<Modes />} />
           <Route path="/presets" element={<Presets />} />
           <Route path="/recordings" element={<Recordings />} />
+          <Route path="/sounds" element={<Sounds />} />
           <Route path="/tutorial" element={<Tutorial />} />
           <Route path="/profile" element={<Profile />} />
         </Route>

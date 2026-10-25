@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PageHeader from '../components/PageHeader';
 import { useHandTracking } from '../hooks/useHandTracking';
 import { isOpenPalm, isFist, isPeaceSign, isPinch, getTilt, getOpennessRatio } from '../utils/gestureChecks';
+import { loadCachedCalibration } from '../lib/calibration';
 
 const HOLD_MS = 800;
 
@@ -13,36 +15,11 @@ type Step = {
 };
 
 const STEPS: Step[] = [
-  {
-    id: 'open',
-    title: 'Розкрий долоню',
-    instruction: 'Покажи камері повністю розкриту долоню з розведеними пальцями',
-    check: isOpenPalm,
-  },
-  {
-    id: 'fist',
-    title: 'Стисни в кулак',
-    instruction: 'Тепер стисни пальці в кулак',
-    check: isFist,
-  },
-  {
-    id: 'pinch',
-    title: 'Зроби щипок',
-    instruction: "З'єднай великий і вказівний палець разом",
-    check: isPinch,
-  },
-  {
-    id: 'peace',
-    title: 'Покажи жест "перемога"',
-    instruction: 'Випрями вказівний і середній палець, решту зігни (як V)',
-    check: isPeaceSign,
-  },
-  {
-    id: 'tilt',
-    title: 'Нахили долоню',
-    instruction: 'Поверни зап\'ясток так, щоб рука нахилилась вбік',
-    check: (landmarks) => Math.abs(getTilt(landmarks)) > 0.5,
-  },
+  { id: 'open', title: 'Розкрий долоню', instruction: 'Покажи камері повністю розкриту долоню з розведеними пальцями', check: isOpenPalm },
+  { id: 'fist', title: 'Стисни в кулак', instruction: 'Тепер стисни пальці в кулак', check: isFist },
+  { id: 'pinch', title: 'Зроби щипок', instruction: 'З’єднай великий і вказівний палець разом', check: isPinch },
+  { id: 'peace', title: 'Покажи жест «перемога»', instruction: 'Випрями вказівний і середній палець, решту зігни (як літера V)', check: isPeaceSign },
+  { id: 'tilt', title: 'Нахили долоню', instruction: 'Поверни зап’ясток так, щоб рука нахилилась убік', check: (lm) => Math.abs(getTilt(lm)) > 0.5 },
 ];
 
 function Tutorial() {
@@ -50,11 +27,11 @@ function Tutorial() {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [completed, setCompleted] = useState<string[]>([]);
+  const [debugValue, setDebugValue] = useState<number | null>(null);
   const holdStartRef = useRef<number | null>(null);
   const isFinished = currentStep >= STEPS.length;
-  const [debugValue, setDebugValue] = useState<number | null>(null);
 
-  const { videoRef, canvasRef } = useHandTracking((handsFound) => {
+  const { videoRef, canvasRef, status } = useHandTracking((handsFound) => {
     if (isFinished || handsFound.length === 0) {
       holdStartRef.current = null;
       setProgress(0);
@@ -66,12 +43,8 @@ function Tutorial() {
     const step = STEPS[currentStep];
     if (!step) return;
 
-    const conditionMet = step.check(landmarks);
-
-    if (conditionMet) {
-      if (holdStartRef.current === null) {
-        holdStartRef.current = performance.now();
-      }
+    if (step.check(landmarks)) {
+      if (holdStartRef.current === null) holdStartRef.current = performance.now();
       const elapsed = performance.now() - holdStartRef.current;
       setProgress(Math.min(elapsed / HOLD_MS, 1));
 
@@ -85,102 +58,75 @@ function Tutorial() {
       holdStartRef.current = null;
       setProgress(0);
     }
-  });
+  }, loadCachedCalibration().confidence);
 
-  const finishTutorial = () => {
-    localStorage.setItem('tutorialCompleted', 'true');
-    navigate('/play');
-  };
-
-  const skipTutorial = () => {
+  const finish = () => {
     localStorage.setItem('tutorialCompleted', 'true');
     navigate('/play');
   };
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: 24, maxWidth: 900 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Як грати</h1>
+    <>
+      <PageHeader crumb="Допомога / Туторіал" title="Як грати">
         {!isFinished && (
-          <button onClick={skipTutorial} style={{ cursor: 'pointer', background: 'none', border: '1px solid #ccc', borderRadius: 6, padding: '8px 14px' }}>
+          <button className="btn" onClick={finish}>
             Пропустити туторіал
           </button>
         )}
-      </div>
+      </PageHeader>
 
-      <div style={{ display: 'flex', gap: 10, margin: '20px 0', flexWrap: 'wrap' }}>
-        {STEPS.map((step, i) => (
-          <div
-            key={step.id}
-            style={{
-              padding: '8px 14px',
-              borderRadius: 20,
-              fontSize: 13,
-              background: completed.includes(step.id)
-                ? '#4DC9B0'
-                : i === currentStep
-                ? '#eee'
-                : '#f8f8f8',
-              color: completed.includes(step.id) ? '#fff' : '#666',
-              border: i === currentStep ? '2px solid #4DC9B0' : '1px solid #ddd',
-            }}
-          >
-            {completed.includes(step.id) ? '✓ ' : ''}
-            {step.title}
-          </div>
-        ))}
-      </div>
-
-      {isFinished ? (
-        <div style={{ padding: 40, textAlign: 'center', background: '#f5f5f5', borderRadius: 12 }}>
-          <h2>🎉 Чудово, ти опанувала всі базові жести!</h2>
-          <p style={{ color: '#666' }}>Тепер можеш переходити до самої гри.</p>
-          <button
-            onClick={finishTutorial}
-            style={{ marginTop: 16, padding: '12px 24px', background: '#4DC9B0', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 15 }}
-          >
-            Перейти до гри →
-          </button>
-        </div>
-      ) : (
-        <>
-          <div style={{ background: '#f5f5f5', padding: 20, borderRadius: 12, marginBottom: 16 }}>
-            <h3 style={{ marginTop: 0 }}>{STEPS[currentStep].title}</h3>
-            <p style={{ color: '#666' }}>{STEPS[currentStep].instruction}</p>
-
-            <div style={{ height: 8, background: '#ddd', borderRadius: 4, overflow: 'hidden' }}>
-              <div
-                style={{
-                  height: '100%',
-                  width: `${progress * 100}%`,
-                  background: '#4DC9B0',
-                  transition: 'width 0.05s linear',
-                }}
-              />
+      <div className="page-body">
+        <div className="tut-grid">
+          <div>
+            <div className="stage">
+              <video ref={videoRef} playsInline muted />
+              <canvas ref={canvasRef} width={640} height={480} />
+              <div className={'stage-badge tl' + (status === 'ready' ? '' : ' idle')}>
+                <span className={'dot' + (status === 'ready' ? '' : status === 'error' ? ' off' : ' wait')} />
+                {status === 'ready' ? 'Камера активна' : status === 'error' ? 'Камера недоступна' : 'Запускаємо камеру…'}
+              </div>
             </div>
-
-            {debugValue !== null && (
-              <p style={{ fontSize: 12, color: '#999', marginTop: 8 }}>
-                Дебаг: відкритість руки = {debugValue.toFixed(2)} (для "розкрита" треба більше 1.6, для "кулак" менше 1.3)
+            {debugValue !== null && !isFinished && (
+              <p className="hint" style={{ marginTop: 12 }}>
+                Відкритість руки: <b className="mono">{debugValue.toFixed(2)}</b> (для «розкрита» треба понад 1.6, для «кулак» менше 1.3)
               </p>
             )}
           </div>
 
-          <div style={{ position: 'relative', width: 480, height: 360 }}>
-            <video
-              ref={videoRef}
-              style={{ position: 'absolute', width: 480, height: 360, transform: 'scaleX(-1)' }}
-            />
-            <canvas
-              ref={canvasRef}
-              width={480}
-              height={360}
-              style={{ position: 'absolute', width: 480, height: 360, transform: 'scaleX(-1)' }}
-            />
+          <div>
+            {isFinished ? (
+              <div className="card finish-box">
+                <h2>🎉 Чудово, базові жести освоєно!</h2>
+                <p>Тепер можна переходити до гри. Режими й налаштування чекають на сторінці «Грати».</p>
+                <button className="btn primary" style={{ padding: '14px 28px' }} onClick={finish}>
+                  Перейти до гри →
+                </button>
+              </div>
+            ) : (
+              <div className="card">
+                <h2 className="card-title">{STEPS[currentStep].title}</h2>
+                <p className="hint">{STEPS[currentStep].instruction}. Утримуй жест, поки шкала не заповниться.</p>
+                <div className="progress">
+                  <i style={{ width: `${progress * 100}%` }} />
+                </div>
+
+                <div className="step-list" style={{ marginTop: 22, marginBottom: 0 }}>
+                  {STEPS.map((step, i) => {
+                    const done = completed.includes(step.id);
+                    return (
+                      <div key={step.id} className={'step-item' + (done ? ' done' : i === currentStep ? ' cur' : '')}>
+                        <span className="num">{done ? '✓' : i + 1}</span>
+                        {step.title}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        </>
-      )}
-    </div>
+        </div>
+      </div>
+    </>
   );
 }
 

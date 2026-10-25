@@ -1,8 +1,61 @@
 import axios from 'axios';
 
+export const API_BASE_URL = 'http://localhost:3000';
+
 const api = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: API_BASE_URL,
 });
+
+// Токен підставляється автоматично до кожного запиту
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export type ApiUser = {
+  id: number;
+  fullName: string;
+  email: string;
+  createdAt?: string;
+};
+
+export type ApiPreset = {
+  id: number;
+  name: string;
+  soundType: string;
+  settings: Record<string, any>;
+  favorite: boolean;
+  usedCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiRecording = {
+  id: number;
+  name: string;
+  fileName: string;
+  mode: string | null;
+  durationSec: number | null;
+  sizeBytes: number | null;
+  createdAt: string;
+};
+
+export type ApiSound = {
+  id: number;
+  name: string;
+  fileName: string;
+  type: 'instrument' | 'background';
+  createdAt: string;
+};
+
+export function getErrorMessage(err: any, fallback = 'Щось пішло не так'): string {
+  return err?.response?.data?.error || fallback;
+}
+
+// ---------- Авторизація ----------
 
 export async function registerUser(fullName: string, email: string, password: string) {
   const response = await api.post('/auth/register', { fullName, email, password });
@@ -14,69 +67,114 @@ export async function loginUser(email: string, password: string) {
   return response.data;
 }
 
-export async function getMe() {
-  const token = localStorage.getItem('token');
-  const response = await api.get('/auth/me', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export async function loginWithGoogle(credential: string) {
+  const response = await api.post('/auth/google', { credential });
+  return response.data;
+}
+
+export async function getMe(): Promise<ApiUser> {
+  const response = await api.get('/auth/me');
   return response.data.user;
 }
 
-export async function getPresets() {
-  const token = localStorage.getItem('token');
-  const response = await api.get('/presets', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export async function updateMe(fullName: string): Promise<ApiUser> {
+  const response = await api.put('/auth/me', { fullName });
+  return response.data.user;
+}
+
+// ---------- Налаштування / калібрування ----------
+
+export async function getCalibration() {
+  const response = await api.get('/settings');
+  return response.data.calibration as Record<string, any> | null;
+}
+
+export async function saveCalibrationRemote(calibration: object) {
+  await api.put('/settings', { calibration });
+}
+
+// ---------- Пресети ----------
+
+export async function getPresets(): Promise<ApiPreset[]> {
+  const response = await api.get('/presets');
   return response.data.presets;
 }
 
-export async function createPreset(name: string, soundType: string, settings: object = {}) {
-  const token = localStorage.getItem('token');
-  const response = await api.post(
-    '/presets',
-    { name, soundType, settings },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+export async function createPreset(name: string, soundType: string, settings: object = {}): Promise<ApiPreset> {
+  const response = await api.post('/presets', { name, soundType, settings });
+  return response.data.preset;
+}
+
+export async function updatePreset(
+  id: number,
+  data: { name?: string; soundType?: string; settings?: object; favorite?: boolean }
+): Promise<ApiPreset> {
+  const response = await api.put(`/presets/${id}`, data);
+  return response.data.preset;
+}
+
+export async function markPresetUsed(id: number): Promise<ApiPreset> {
+  const response = await api.post(`/presets/${id}/use`);
   return response.data.preset;
 }
 
 export async function deletePreset(id: number) {
-  const token = localStorage.getItem('token');
-  await api.delete(`/presets/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  await api.delete(`/presets/${id}`);
 }
 
-export async function getRecordings() {
-  const token = localStorage.getItem('token');
-  const response = await api.get('/recordings', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+// ---------- Записи ----------
+
+export async function getRecordings(): Promise<ApiRecording[]> {
+  const response = await api.get('/recordings');
   return response.data.recordings;
 }
 
-export async function uploadRecording(name: string, blob: Blob) {
-  const token = localStorage.getItem('token');
+export async function uploadRecording(name: string, blob: Blob, mode?: string, durationSec?: number) {
   const formData = new FormData();
   formData.append('name', name);
+  if (mode) formData.append('mode', mode);
+  if (durationSec !== undefined) formData.append('durationSec', String(durationSec));
   formData.append('audio', blob, 'recording.webm');
 
   const response = await api.post('/recordings', formData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'multipart/form-data',
-    },
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return response.data.recording as ApiRecording;
+}
+
+export async function renameRecording(id: number, name: string): Promise<ApiRecording> {
+  const response = await api.put(`/recordings/${id}`, { name });
   return response.data.recording;
 }
 
 export async function deleteRecording(id: number) {
-  const token = localStorage.getItem('token');
-  await api.delete(`/recordings/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  await api.delete(`/recordings/${id}`);
 }
 
-export const API_BASE_URL = 'http://localhost:3000';
+// ---------- Власні звуки ----------
+
+export async function getSounds(type?: 'instrument' | 'background'): Promise<ApiSound[]> {
+  const response = await api.get('/sounds', { params: type ? { type } : {} });
+  return response.data.sounds;
+}
+
+export async function uploadSound(name: string, type: 'instrument' | 'background', file: File): Promise<ApiSound> {
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('type', type);
+  formData.append('audio', file);
+  const response = await api.post('/sounds', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data.sound;
+}
+
+export async function deleteSound(id: number) {
+  await api.delete(`/sounds/${id}`);
+}
+
+export function uploadUrl(fileName: string) {
+  return `${API_BASE_URL}/uploads/${fileName}`;
+}
 
 export default api;

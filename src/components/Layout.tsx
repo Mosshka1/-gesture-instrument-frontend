@@ -1,71 +1,49 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink } from 'react-router-dom';
+import { IconHelp, IconModes, IconPlay, IconPresets, IconRecordings, IconSounds } from './Icons';
+import { getStoredUser, initials } from '../lib/format';
 
 function Layout() {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
-  const linkStyle = ({ isActive }: { isActive: boolean }) => ({
-    display: 'block',
-    padding: '10px 16px',
-    borderRadius: 8,
-    textDecoration: 'none',
-    color: isActive ? '#fff' : '#444',
-    background: isActive ? '#4DC9B0' : 'transparent',
-    marginBottom: 6,
-  });
+  const user = getStoredUser();
+  const cls = ({ isActive }: { isActive: boolean }) => 'side-link' + (isActive ? ' active' : '');
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-      <nav
-        style={{
-          width: 200,
-          background: '#f5f5f5',
-          borderRight: '1px solid #ddd',
-          padding: 16,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <h3 style={{ marginTop: 0, marginBottom: 20 }}>🎵 Aeris</h3>
+    <div className="app-shell">
+      <nav className="sidebar">
+        <div className="logo-mark" title="GestureSound" />
 
-        <NavLink to="/play" style={linkStyle}>
-          ▶ Грати
+        <NavLink to="/play" className={cls} title="Грати">
+          <IconPlay />
+          Грати
         </NavLink>
-        <NavLink to="/presets" style={linkStyle}>
-          🎛 Пресети
+        <NavLink to="/modes" className={cls} title="Режими інструмента">
+          <IconModes />
+          Режими
         </NavLink>
-        <NavLink to="/recordings" style={linkStyle}>
-          🎙 Мої записи
+        <NavLink to="/presets" className={cls} title="Мої пресети">
+          <IconPresets />
+          Пресети
         </NavLink>
-        <NavLink to="/tutorial" style={linkStyle}>
-          ❓ Як грати
+        <NavLink to="/recordings" className={cls} title="Мої записи">
+          <IconRecordings />
+          Записи
         </NavLink>
-        <NavLink to="/profile" style={linkStyle}>
-          👤 Профіль
+        <NavLink to="/sounds" className={cls} title="Власні звуки">
+          <IconSounds />
+          Звуки
         </NavLink>
 
-        <button
-          onClick={handleLogout}
-          style={{
-            marginTop: 'auto',
-            padding: 10,
-            background: 'transparent',
-            border: '1px solid #ccc',
-            borderRadius: 8,
-            cursor: 'pointer',
-            color: '#c0392b',
-          }}
-        >
-          Вийти
-        </button>
+        <div className="side-spacer" />
+
+        <NavLink to="/tutorial" className={cls} title="Як грати">
+          <IconHelp />
+          Туторіал
+        </NavLink>
+        <NavLink to="/profile" title="Профіль" style={{ marginTop: 8 }}>
+          {({ isActive }) => <div className={'avatar-sm' + (isActive ? ' active' : '')}>{initials(user?.fullName)}</div>}
+        </NavLink>
       </nav>
 
-      <main style={{ flex: 1, overflow: 'auto' }}>
+      <main className="main">
         <Outlet />
       </main>
     </div>

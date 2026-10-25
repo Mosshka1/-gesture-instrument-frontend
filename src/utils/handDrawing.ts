@@ -7,9 +7,15 @@ export const HAND_CONNECTIONS = [
   [5, 9], [9, 13], [13, 17],
 ];
 
+const TIPS = [4, 8, 12, 16, 20];
+
 export function drawHandSkeleton(ctx: CanvasRenderingContext2D, landmarks: any[], width: number, height: number) {
-  ctx.strokeStyle = '#4DC9B0';
-  ctx.lineWidth = 2;
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.shadowColor = '#3de8c8';
+  ctx.shadowBlur = 14;
+  ctx.strokeStyle = '#3de8c8';
+  ctx.lineWidth = 3;
   HAND_CONNECTIONS.forEach(([start, end]) => {
     const p1 = landmarks[start];
     const p2 = landmarks[end];
@@ -19,10 +25,13 @@ export function drawHandSkeleton(ctx: CanvasRenderingContext2D, landmarks: any[]
     ctx.stroke();
   });
 
-  ctx.fillStyle = '#E8B54D';
-  landmarks.forEach((point: any) => {
+  landmarks.forEach((point: any, i: number) => {
+    const isTip = TIPS.includes(i);
+    ctx.shadowColor = isTip ? '#c6f23a' : '#ffffff';
+    ctx.fillStyle = isTip ? '#c6f23a' : '#ffffff';
     ctx.beginPath();
-    ctx.arc(point.x * width, point.y * height, 4, 0, 2 * Math.PI);
+    ctx.arc(point.x * width, point.y * height, isTip ? 6 : 4, 0, 2 * Math.PI);
     ctx.fill();
   });
+  ctx.restore();
 }

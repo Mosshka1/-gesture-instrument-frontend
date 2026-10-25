@@ -1,34 +1,58 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { drawHandSkeleton } from '../utils/handDrawing';
 
 declare global {
   interface Window {
     Hands: any;
     Camera: any;
+    google: any;
   }
 }
 
-export function useHandTracking(onLandmarks: (handsFound: any[][]) => void) {
+export type CameraStatus = 'starting' | 'ready' | 'error';
+
+type FrameCallback = (handsFound: any[][], ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void;
+
+export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const onLandmarksRef = useRef(onLandmarks);
-  onLandmarksRef.current = onLandmarks;
+  const onFrameRef = useRef(onFrame);
+  onFrameRef.current = onFrame;
+  const handsRef = useRef<any>(null);
+  const confidenceRef = useRef(confidence);
+  confidenceRef.current = confidence;
+
+  const [status, setStatus] = useState<CameraStatus>('starting');
+  const [fps, setFps] = useState(0);
+
+  // Поріг упевненості можна міняти "на льоту"
+  useEffect(() => {
+    const c = Math.min(0.95, Math.max(0.2, confidence / 100));
+    handsRef.current?.setOptions({ minDetectionConfidence: c, minTrackingConfidence: Math.max(0.2, c - 0.1) });
+  }, [confidence]);
 
   useEffect(() => {
     let cameraInstance: any = null;
     let isActive = true;
-    let handsInstance: any = null;
+    let frames = 0;
+    let lastFpsTime = performance.now();
+
+    if (!window.Hands || !window.Camera) {
+      setStatus('error');
+      return;
+    }
 
     const hands = new window.Hands({
       locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
     });
-    handsInstance = hands;
+    handsRef.current = hands;
 
+    const c0 = Math.min(0.95, Math.max(0.2, confidenceRef.current / 100));
     hands.setOptions({
       maxNumHands: 2,
       modelComplexity: 1,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
+      minDetectionConfidence: c0,
+      minTrackingConfidence: Math.max(0.2, c0 - 0.1),
     });
 
     hands.onResults((results: any) => {
@@ -41,12 +65,21 @@ export function useHandTracking(onLandmarks: (handsFound: any[][]) => void) {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const handsFound = results.multiHandLandmarks || [];
-      handsFound.forEach((landmarks: any[]) => {
+      const handsFound: any[][] = results.multiHandLandmarks || [];
+      handsFound.forEach((landmarks) => {
         drawHandSkeleton(ctx, landmarks, canvas.width, canvas.height);
       });
 
-      onLandmarksRef.current(handsFound);
+      onFrameRef.current(handsFound, ctx, canvas);
+
+      frames++;
+      const now = performance.now();
+      if (now - lastFpsTime >= 1000) {
+        setFps(Math.round((frames * 1000) / (now - lastFpsTime)));
+        frames = 0;
+        lastFpsTime = now;
+        setStatus('ready');
+      }
     });
 
     if (videoRef.current) {
@@ -59,15 +92,18 @@ export function useHandTracking(onLandmarks: (handsFound: any[][]) => void) {
         width: 640,
         height: 480,
       });
-      cameraInstance.start();
+      Promise.resolve(cameraInstance.start()).catch(() => {
+        if (isActive) setStatus('error');
+      });
     }
 
     return () => {
       isActive = false;
+      handsRef.current = null;
       cameraInstance?.stop();
-      handsInstance?.close?.();
+      hands.close?.();
     };
   }, []);
 
-  return { videoRef, canvasRef };
+  return { videoRef, canvasRef, status, fps };
 }
