@@ -4,14 +4,18 @@ import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 import CalibrationWizard from '../components/CalibrationWizard';
 import LooperPanel from '../components/LooperPanel';
+import ModeGuide from '../components/ModeGuide';
+import SoundPanel from '../components/SoundPanel';
+import Sheet from '../components/Sheet';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { Looper } from '../audio/looper';
 import { IconFullscreen, IconGear } from '../components/Icons';
 import { useHandTracking } from '../hooks/useHandTracking';
 import { HandTracker } from '../audio/features';
 import type { Calibration } from '../audio/features';
-import { DEFAULT_OPTS, MODES, createMode, emptyParams, getModeMeta, normalizeModeId } from '../audio/modes';
+import { DEFAULT_OPTS, createMode, emptyParams, getModeMeta, normalizeModeId } from '../audio/modes';
 import type { LiveParams, ModeId, ModeVoice, Opts, Spawn } from '../audio/modes';
-import { NOTE_NAMES, SCALES, createReverbImpulse } from '../audio/music';
+import { SCALES, createReverbImpulse } from '../audio/music';
 import type { ScaleId } from '../audio/music';
 import { createPreset, getErrorMessage, getSounds, markPresetUsed, updatePreset, uploadRecording, uploadUrl } from '../api';
 import type { ApiPreset, ApiSound } from '../api';
@@ -45,6 +49,8 @@ function Instrument() {
   const [sampleVersion, setSampleVersion] = useState(0);
   const [live, setLive] = useState<LiveParams>(emptyParams());
   const [showSettings, setShowSettings] = useState(false);
+  const [introFor, setIntroFor] = useState<ModeId | null>(null);
+  const isMobile = useMediaQuery('(max-width: 820px), (max-height: 520px)');
   const [calibrating, setCalibrating] = useState(false);
   const [showSave, setShowSave] = useState(false);
   const [presetName, setPresetName] = useState('');
@@ -64,6 +70,9 @@ function Instrument() {
   const waveRef = useRef<HTMLCanvasElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<GainNode | null>(null);
+  const outRef = useRef<GainNode | null>(null); // фінальний вихід після ефектів: звідси йде запис
+  const fxRef = useRef<{ tone: BiquadFilterNode; echoSend: GainNode; fb: GainNode; out: GainNode; wetOut: GainNode } | null>(null);
+  const settingsRef = useRef<HTMLDivElement | null>(null);
   const instRef = useRef<GainNode | null>(null);
   const looperRef = useRef<Looper | null>(null);
   const wetRef = useRef<GainNode | null>(null);
@@ -159,10 +168,15 @@ function Instrument() {
         const s = preset.settings || {};
         const m = normalizeModeId(preset.soundType);
         setModeId(m);
+        const num = (v: unknown, d: number) => (typeof v === 'number' ? v : d);
         setOpts({
           scale: (s.scale as ScaleId) in SCALES ? (s.scale as ScaleId) : DEFAULT_OPTS.scale,
-          root: typeof s.root === 'number' ? s.root : DEFAULT_OPTS.root,
-          reverb: typeof s.reverb === 'number' ? s.reverb : DEFAULT_OPTS.reverb,
+          root: num(s.root, DEFAULT_OPTS.root),
+          reverb: num(s.reverb, DEFAULT_OPTS.reverb),
+          echo: num(s.echo, DEFAULT_OPTS.echo),
+          tone: num(s.tone, DEFAULT_OPTS.tone),
+          volume: num(s.volume, DEFAULT_OPTS.volume),
+          wave: ['auto', 'sine', 'triangle', 'square', 'sawtooth'].includes(s.wave) ? s.wave : DEFAULT_OPTS.wave,
         });
         setSoundId(s.soundId ? String(s.soundId) : '');
         setBackgroundId(s.backgroundId ? String(s.backgroundId) : '');
@@ -217,7 +231,31 @@ function Instrument() {
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 128;
     analyser.smoothingTimeConstant = 0.75;
-    master.connect(analyser);
+
+    // ефекти на виході: яскравість (фільтр), ехо (затримка із зворотним зв’язком) і загальна гучність
+    const toneF = ctx.createBiquadFilter();
+    toneF.type = 'lowpass';
+    toneF.frequency.value = 18000;
+    toneF.Q.value = 0.5;
+    const out = ctx.createGain();
+    const echoSend = ctx.createGain();
+    echoSend.gain.value = 0;
+    const delay = ctx.createDelay(1.5);
+    delay.delayTime.value = 0.36;
+    const echoLP = ctx.createBiquadFilter();
+    echoLP.type = 'lowpass';
+    echoLP.frequency.value = 3200;
+    const fb = ctx.createGain();
+    fb.gain.value = 0.3;
+    master.connect(toneF);
+    toneF.connect(out);
+    toneF.connect(echoSend);
+    echoSend.connect(delay);
+    delay.connect(echoLP);
+    echoLP.connect(out);
+    echoLP.connect(fb);
+    fb.connect(delay);
+    out.connect(analyser);
     analyser.connect(ctx.destination);
 
     const wetIn = ctx.createGain();
@@ -234,6 +272,8 @@ function Instrument() {
 
     audioCtxRef.current = ctx;
     masterRef.current = master;
+    outRef.current = out;
+    fxRef.current = { tone: toneF, echoSend, fb, out, wetOut };
     instRef.current = instOut;
     const lp = new Looper(ctx, instOut, master, () => setLooperVersion((v) => v + 1));
     looperRef.current = lp;
@@ -241,7 +281,28 @@ function Instrument() {
     wetRef.current = wetIn;
     analyserRef.current = analyser;
     setAudioStarted(true);
+    setIntroFor(modeId);
   };
+
+  // ефекти реагують на повзунки відразу
+  useEffect(() => {
+    const fx = fxRef.current;
+    const ctx = audioCtxRef.current;
+    if (!fx || !ctx) return;
+    const t = ctx.currentTime;
+    fx.tone.frequency.setTargetAtTime(400 * Math.pow(45, opts.tone / 100), t, 0.05);
+    fx.echoSend.gain.setTargetAtTime((opts.echo / 100) * 0.85, t, 0.05);
+    fx.fb.gain.setTargetAtTime(0.28 + (opts.echo / 100) * 0.32, t, 0.05);
+    fx.out.gain.setTargetAtTime(opts.volume / 85, t, 0.05);
+    fx.wetOut.gain.setTargetAtTime(0.3 + 0.8 * (opts.reverb / 100), t, 0.05);
+  }, [opts, audioStarted]);
+
+  // коротка підказка на сцені при зміні режиму
+  useEffect(() => {
+    if (!introFor) return;
+    const t = setTimeout(() => setIntroFor(null), 9000);
+    return () => clearTimeout(t);
+  }, [introFor]);
 
   // створення активного режиму (перестворюється при зміні режиму або звуку)
   useEffect(() => {
@@ -408,7 +469,7 @@ function Instrument() {
 
   const startRecording = async () => {
     const ctx = audioCtxRef.current;
-    const master = masterRef.current;
+    const master = outRef.current;
     if (!ctx || !master || recorderRef.current?.state === 'recording') return;
     if (typeof MediaRecorder === 'undefined') {
       setNotice('Цей браузер не підтримує запис звуку');
@@ -548,6 +609,10 @@ function Instrument() {
     scale: opts.scale,
     root: opts.root,
     reverb: opts.reverb,
+    echo: opts.echo,
+    tone: opts.tone,
+    volume: opts.volume,
+    wave: opts.wave,
     soundId: soundId ? Number(soundId) : null,
     backgroundId: backgroundId ? Number(backgroundId) : null,
     sensitivity: cal.sensitivity,
@@ -606,6 +671,7 @@ function Instrument() {
   // ---------- допоміжне для відображення ----------
   const changeMode = (id: ModeId) => {
     setModeId(id);
+    setIntroFor(id);
     markModified();
   };
 
@@ -717,67 +783,24 @@ function Instrument() {
               </div>
             )}
 
-            {showSettings && (
-              <div className="settings-pop">
-                <div className="panel-head" style={{ marginBottom: 6 }}>
-                  <h3>Налаштування звуку</h3>
-                  <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => setShowSettings(false)}>
-                    ✕
-                  </button>
+            {introFor && audioStarted && !calibrating && (
+              <div className="mode-intro" key={introFor} style={{ ['--c' as string]: getModeMeta(introFor).color }}>
+                <button className="mi-close" onClick={() => setIntroFor(null)} aria-label="Сховати підказку">
+                  ✕
+                </button>
+                <div className="mi-title">
+                  <i>{getModeMeta(introFor).icon}</i> {getModeMeta(introFor).name}
                 </div>
-
-                <label className="field">Гама</label>
-                <select className="select" value={opts.scale} onChange={(e) => changeOpts({ scale: e.target.value as ScaleId })}>
-                  {Object.entries(SCALES).map(([id, s]) => (
-                    <option key={id} value={id}>
-                      {s.name}
-                    </option>
+                <ul>
+                  {getModeMeta(introFor).howTo.slice(0, 3).map((h, i) => (
+                    <li key={i}>
+                      <span>{h.icon}</span>
+                      <span>
+                        <b>{h.gesture}</b> — {h.effect}
+                      </span>
+                    </li>
                   ))}
-                </select>
-
-                <label className="field">Тональність</label>
-                <select className="select" value={opts.root} onChange={(e) => changeOpts({ root: Number(e.target.value) })}>
-                  {NOTE_NAMES.map((n, i) => (
-                    <option key={n} value={i}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-
-                <label className="field">Реверб: {opts.reverb}%</label>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={opts.reverb}
-                  style={{ ['--fill' as string]: `${opts.reverb}%` }}
-                  onChange={(e) => changeOpts({ reverb: Number(e.target.value) })}
-                />
-
-                <label className="field">Власний звук інструмента</label>
-                <select className="select" value={soundId} onChange={(e) => { setSoundId(e.target.value); markModified(); }}>
-                  <option value="">Стандартний синтез</option>
-                  {instrumentSounds.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-
-                <label className="field">Фонова петля</label>
-                <select className="select" value={backgroundId} onChange={(e) => { setBackgroundId(e.target.value); markModified(); }}>
-                  <option value="">Без фону</option>
-                  {backgroundSounds.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-                {sounds.length === 0 && (
-                  <p className="hint" style={{ marginTop: 10, marginBottom: 0 }}>
-                    Власні звуки можна завантажити в розділі «Звуки».
-                  </p>
-                )}
+                </ul>
               </div>
             )}
 
@@ -797,7 +820,14 @@ function Instrument() {
                   <strong>{meta.name}</strong>
                 </div>
               </div>
-              <button className="stage-btn" title="Налаштування звуку" onClick={() => setShowSettings((v) => !v)}>
+              <button
+                className="stage-btn"
+                title="Налаштування звуку"
+                onClick={() => {
+                  if (isMobile) setShowSettings(true);
+                  else settingsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+              >
                 <IconGear />
               </button>
               {canFullscreen && (
@@ -819,6 +849,8 @@ function Instrument() {
 
           {/* ---------- права панель ---------- */}
           <div>
+            <ModeGuide modeId={modeId} onChange={changeMode} onAll={() => navigate('/modes')} />
+
             <LooperPanel looper={looper} modeName={meta.name} version={looperVersion} />
             <div className="panel">
               <div className="panel-head">
@@ -848,28 +880,31 @@ function Instrument() {
               <canvas ref={waveRef} className="wave-canvas" width={600} height={84} />
             </div>
 
-            <div className="panel">
-              <div className="panel-head">
-                <h3>Швидкий вибір режиму</h3>
-                <a href="#modes" onClick={(e) => { e.preventDefault(); navigate('/modes'); }} className="mono" style={{ fontSize: 12 }}>
-                  Усі →
-                </a>
+            {!isMobile && (
+              <div className="panel" ref={settingsRef}>
+                <div className="panel-head">
+                  <h3>Звук і ефекти</h3>
+                  <span className="mini-tag">чути одразу</span>
+                </div>
+                <SoundPanel
+                  opts={opts}
+                  onChange={changeOpts}
+                  soundId={soundId}
+                  backgroundId={backgroundId}
+                  onSound={(id) => {
+                    setSoundId(id);
+                    markModified();
+                  }}
+                  onBackground={(id) => {
+                    setBackgroundId(id);
+                    markModified();
+                  }}
+                  instrumentSounds={instrumentSounds}
+                  backgroundSounds={backgroundSounds}
+                  hasSounds={sounds.length > 0}
+                />
               </div>
-              <div className="mode-list">
-                {MODES.map((m) => (
-                  <button
-                    key={m.id}
-                    className={'mode-row' + (m.id === modeId ? ' active' : '')}
-                    style={{ ['--c' as string]: m.color }}
-                    onClick={() => changeMode(m.id)}
-                  >
-                    <span className="sw" />
-                    <span className="name">{m.name}</span>
-                    {m.id === modeId && <span className="mini-tag" style={{ ['--c' as string]: m.color }}>активний</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
+            )}
 
             <div className="action-row">
               <button
@@ -913,6 +948,28 @@ function Instrument() {
           <input className="input" value={presetName} autoFocus onChange={(e) => setPresetName(e.target.value)} placeholder="Наприклад: Неоновий пад" onKeyDown={(e) => e.key === 'Enter' && savePresetNew()} />
           {saveError && <div className="error-box">{saveError}</div>}
         </Modal>
+      )}
+
+      {isMobile && showSettings && (
+        <Sheet title="Звук і ефекти" onClose={() => setShowSettings(false)}>
+          <SoundPanel
+            opts={opts}
+                  onChange={changeOpts}
+                  soundId={soundId}
+                  backgroundId={backgroundId}
+                  onSound={(id) => {
+                    setSoundId(id);
+                    markModified();
+                  }}
+                  onBackground={(id) => {
+                    setBackgroundId(id);
+                    markModified();
+                  }}
+                  instrumentSounds={instrumentSounds}
+                  backgroundSounds={backgroundSounds}
+                  hasSounds={sounds.length > 0}
+          />
+        </Sheet>
       )}
 
       {pendingRec && (

@@ -20,8 +20,11 @@ import {
 } from './music';
 import type { ScaleId } from './music';
 
-export type ModeId = 'ambient' | 'lead' | 'pluck' | 'percussive' | 'theremin' | 'chord';
+export type ModeId = 'ambient' | 'lead' | 'pluck' | 'percussive' | 'theremin' | 'chord' | 'arp' | 'choir' | 'wobble';
 export type ModeCategory = 'melodic' | 'chords' | 'percussive';
+
+// Один крок «Як керувати»: що робити рукою і що станеться зі звуком
+export type HowTo = { icon: string; gesture: string; effect: string };
 
 export type ModeMeta = {
   id: ModeId;
@@ -29,8 +32,10 @@ export type ModeMeta = {
   category: ModeCategory;
   color: string;
   icon: string;
+  tagline: string; // одне речення: який це інструмент
   desc: string;
-  mappings: [string, string][];
+  howTo: HowTo[];
+  tip: string; // порада, як зіграти красиво
   paramLabels: [string, string, string, string];
   usesSample: boolean;
 };
@@ -42,12 +47,15 @@ export const MODES: ModeMeta[] = [
     category: 'melodic',
     color: '#3de8c8',
     icon: '◖',
-    desc: 'Повільний оксамитовий пад. Висота руки плавно змінює тон, розкриття пальців додає об’єм і реверб.',
-    mappings: [
-      ['Висота руки (Y)', 'Тон (глісандо)'],
-      ['Відстань (Z)', 'Гучність'],
-      ['Розведення пальців', 'Реверб / фільтр'],
+    tagline: 'Хвилі звуку, що пливуть услід за рукою',
+    desc: 'Повільний оксамитовий пад. Звук не «б’є» нотами, а плавно ковзає: чим вище рука, тим вищий тон.',
+    howTo: [
+      { icon: '↕', gesture: 'Піднімай і опускай руку', effect: 'Тон плавно ковзає вгору й вниз (глісандо)' },
+      { icon: '⇲', gesture: 'Наближай руку до камери', effect: 'Звук стає гучнішим, віддаляєш — тихішим' },
+      { icon: '🖐', gesture: 'Розводь пальці', effect: 'Звук яскравішає, з’являється простір (реверб)' },
+      { icon: '↔', gesture: 'Рухай руку вліво-вправо', effect: 'Звук переїжджає між лівим і правим динаміком' },
     ],
+    tip: 'Рухайся повільно — пад любить плавність. Покажи дві руки, і зазвучать два голоси одночасно.',
     paramLabels: ['Тон (Y — висота руки)', 'Гучність (Z — відстань)', 'Тембр (розведення пальців)', 'Ефект — реверб'],
     usesSample: true,
   },
@@ -57,13 +65,15 @@ export const MODES: ModeMeta[] = [
     category: 'melodic',
     color: '#8b6cff',
     icon: '◢',
-    desc: 'Гострий монофонічний лід. Кількість пальців обирає ступінь гами, тож мелодії виходять чистими.',
-    mappings: [
-      ['Кількість пальців', 'Ступінь гами'],
-      ['Висота руки', 'Октава'],
-      ['Положення X', 'Вібрато'],
-      ['Кулак / долоня', 'Фільтр + пауза'],
+    tagline: 'Гострий соло-синтезатор для мелодій',
+    desc: 'Монофонічний лід: кількість пальців обирає ноту гами, тож мелодія завжди звучить чисто.',
+    howTo: [
+      { icon: '☝', gesture: 'Покажи від 1 до 5 пальців', effect: 'Грає відповідна нота гами (1 палець — перша, 5 — п’ята)' },
+      { icon: '↕', gesture: 'Тримай руку високо або низько', effect: 'Високо — октава вище, низько — звичайна' },
+      { icon: '✊', gesture: 'Стисни кулак', effect: 'Звук затихає (пауза), а фільтр закривається' },
+      { icon: '↔', gesture: 'Зміщуй руку вправо', effect: 'З’являється вібрато — чим правіше, тим глибше' },
     ],
+    tip: 'Спробуй пальці 1-3-5-3 — це вже мелодія. З гамою «Пентатоніка» помилитись неможливо.',
     paramLabels: ['Нота (пальці)', 'Гучність (кулак — пауза)', 'Фільтр (кулак ↔ долоня)', 'Вібрато (X — вправо)'],
     usesSample: true,
   },
@@ -73,12 +83,15 @@ export const MODES: ModeMeta[] = [
     category: 'melodic',
     color: '#ffb347',
     icon: '♪',
-    desc: 'Фізична модель струни (Karplus-Strong). Щипок або швидкий помах пальця — і струна звучить.',
-    mappings: [
-      ['Щипок / помах пальця', 'Удар по струні'],
-      ['Висота руки', 'Тональність струн'],
-      ['Нерухомість руки', 'Сустейн / загасання'],
+    tagline: 'Арфа з повітря: кожен палець — окрема струна',
+    desc: 'Фізична модель струни (Karplus-Strong). Швидкий помах пальця — і струна дзвенить, як справжня.',
+    howTo: [
+      { icon: '☝', gesture: 'Швидко смикни кінчиком пальця', effect: 'Зазвучить струна цього пальця (4 пальці — 4 струни)' },
+      { icon: '↕', gesture: 'Піднімай або опускай руку', effect: 'Вся арфа переходить у вищу чи нижчу тональність' },
+      { icon: '⏸', gesture: 'Після удару тримай руку нерухомо', effect: 'Нота дзвенить довше, рух — швидко її гасить' },
+      { icon: '⚡', gesture: 'Смикай сильніше', effect: 'Удар гучніший і яскравіший' },
     ],
+    tip: 'Грай як на арфі: швидко проводь рукою зліва направо, смикаючи пальцями по черзі.',
     paramLabels: ['Остання нота (висота руки)', 'Сила удару', 'Сустейн (нерухомість)', 'Ефект — реверб'],
     usesSample: true,
   },
@@ -88,12 +101,14 @@ export const MODES: ModeMeta[] = [
     category: 'percussive',
     color: '#ff4fc3',
     icon: '▦',
-    desc: 'Сітка віртуальних падів на кадрі камери. Різко рухни рукою в зону — і пролунає удар.',
-    mappings: [
-      ['Зона кадру', 'Який пад заграє'],
-      ['Швидкість руху', 'Сила / гучність'],
-      ['Дві руки', 'Накладання ударів'],
+    tagline: 'Барабанна установка на екрані камери',
+    desc: 'Кадр розділений на 6 зон, у кожній — свій барабан (кік, снейр, хет, том, клеп, райд). Ударяй по зонах рукою.',
+    howTo: [
+      { icon: '🥁', gesture: 'Різко рухни рукою в зону кадру', effect: 'Пролунає барабан, підписаний у цій зоні' },
+      { icon: '⚡', gesture: 'Бий швидше', effect: 'Удар гучніший — повільний рух грає тихо' },
+      { icon: '🙌', gesture: 'Підніми дві руки', effect: 'Можна грати двома руками й накладати удари' },
     ],
+    tip: 'Склади біт: ліва рука — кік і снейр, права — хет. Подивись на сітку на екрані, там підписано кожен барабан.',
     paramLabels: ['Пад (зона кадру)', 'Сила удару', 'Швидкість руху', 'Ефект — реверб'],
     usesSample: true,
   },
@@ -103,12 +118,14 @@ export const MODES: ModeMeta[] = [
     category: 'melodic',
     color: '#c6f23a',
     icon: '≈',
-    desc: 'Класичне безперервне керування: жодних фіксованих нот. Дві руки — права тон, ліва гучність.',
-    mappings: [
-      ['Висота руки (Y)', 'Безперервний тон'],
-      ['Відстань (Z) / ліва рука', 'Гучність'],
-      ['Нахил зап’ястка', 'Глибина тремоло'],
+    tagline: 'Звук із повітря — без жодних фіксованих нот',
+    desc: 'Класичний електронний інструмент, на якому грають, не торкаючись: тон і гучність керуються лише положенням рук.',
+    howTo: [
+      { icon: '↕', gesture: 'Піднімай і опускай першу руку', effect: 'Безперервно змінюється тон (немає фіксованих нот)' },
+      { icon: '🙌', gesture: 'Покажи другу руку й рухай її вгору-вниз', effect: 'Друга рука керує гучністю' },
+      { icon: '⤾', gesture: 'Нахиляй зап’ястя вліво чи вправо', effect: 'Звук починає тремтіти (тремоло)' },
     ],
+    tip: 'Роби повільні плавні рухи. Щоб ноти були чистими, відпрацюй спершу висоту руки без нахилів.',
     paramLabels: ['Тон (Y — висота руки)', 'Гучність', 'Тембр (розкриття)', 'Тремоло (нахил)'],
     usesSample: true,
   },
@@ -118,14 +135,73 @@ export const MODES: ModeMeta[] = [
     category: 'chords',
     color: '#6a7dff',
     icon: '▤',
-    desc: 'Кількість пальців обирає акорд обраної тональності. З двома руками одна грає акорди, друга — мелодію.',
-    mappings: [
-      ['Кількість пальців', 'Ступінь акорду'],
-      ['Нахил долоні', 'Обернення'],
-      ['Ліва / права рука', 'Акорди / мелодія'],
+    tagline: 'Повні акорди однією рукою',
+    desc: 'Кількість пальців обирає акорд обраної тональності. З двома руками одна грає акорди, а друга — мелодію.',
+    howTo: [
+      { icon: '☝', gesture: 'Покажи від 1 до 5 пальців', effect: 'Звучить акорд відповідного ступеня гами' },
+      { icon: '⤾', gesture: 'Нахили долоню вліво або вправо', effect: 'Акорд змінює обернення — звучить інакше' },
+      { icon: '🖐', gesture: 'Широко розведи пальці', effect: 'До акорду додається сьома нота — він стає «багатшим»' },
+      { icon: '🙌', gesture: 'Покажи другу руку', effect: 'Вона грає мелодію: висота руки обирає ноту' },
     ],
+    tip: 'Проста прогресія: 1 → 4 → 5 → 1 пальців. Це основа сотень пісень.',
     paramLabels: ['Акорд (пальці)', 'Гучність', 'Розведення (7-ма нота)', 'Нахил (обернення)'],
     usesSample: true,
+  },
+  {
+    id: 'arp',
+    name: 'Арпеджіо',
+    category: 'chords',
+    color: '#ff8a4c',
+    icon: '⫶',
+    tagline: 'Акорд, що сам біжить нотами в ритмі',
+    desc: 'Обираєш акорд пальцями, а синтезатор сам програє його ноти одну за одною. Ти керуєш темпом і малюнком.',
+    howTo: [
+      { icon: '☝', gesture: 'Покажи від 1 до 5 пальців', effect: 'Обираєш акорд, ноти якого запустяться по колу' },
+      { icon: '↔', gesture: 'Рухай руку вліво-вправо', effect: 'Темп: ліворуч — повільно, праворуч — дуже швидко' },
+      { icon: '↕', gesture: 'Піднімай чи опускай руку', effect: 'Низько — ноти вгору, посередині — вгору-вниз, високо — випадково' },
+      { icon: '🖐', gesture: 'Розводь пальці', effect: 'Ноти стають довшими, а звук яскравішим' },
+      { icon: '✊', gesture: 'Стисни кулак', effect: 'Арпеджіо зупиняється — пауза' },
+    ],
+    tip: 'Тримай 1 палець, повільно веди руку вправо — темп наростає, як у танцювальному треку.',
+    paramLabels: ['Нота (арпеджіо)', 'Гучність', 'Довжина нот (розведення)', 'Темп (X — вправо)'],
+    usesSample: false,
+  },
+  {
+    id: 'choir',
+    name: 'Хор',
+    category: 'melodic',
+    color: '#ff6fa8',
+    icon: '◍',
+    tagline: 'Людський голос, який «співає» голосні',
+    desc: 'Синтезований хор. Розкриття долоні змінює голосну — від «У» до «І», а висота руки обирає ноту гами.',
+    howTo: [
+      { icon: '↕', gesture: 'Піднімай і опускай руку', effect: 'Хор співає ноти гами (без фальшивих)' },
+      { icon: '🖐', gesture: 'Розкривай долоню від кулака до відкритої', effect: 'Голосна змінюється: У → О → А → Е → І' },
+      { icon: '⇲', gesture: 'Наближай руку до камери', effect: 'Хор співає голосніше' },
+      { icon: '⤾', gesture: 'Нахиляй зап’ястя', effect: 'З’являється вібрато, як у справжнього співака' },
+    ],
+    tip: 'Заспівай «А-а-а» із широко розкритою долонею, а потім повільно стискай у кулак до «У-у-у».',
+    paramLabels: ['Нота (висота руки)', 'Гучність (близькість)', 'Голосна (розкриття долоні)', 'Вібрато (нахил)'],
+    usesSample: true,
+  },
+  {
+    id: 'wobble',
+    name: 'Вобл-бас',
+    category: 'melodic',
+    color: '#4cc9ff',
+    icon: '∿',
+    tagline: 'Важкий бас, що «гойдається» як у даб-степі',
+    desc: 'Потужний бас із фільтром, який хвилею відкривається й закривається. Швидкість «воблу» задаєш положенням руки.',
+    howTo: [
+      { icon: '☝', gesture: 'Покажи від 1 до 5 пальців', effect: 'Грає нота басу (1 палець — найнижча)' },
+      { icon: '↔', gesture: 'Рухай руку вліво-вправо', effect: 'Швидкість воблу: ліворуч — повільно, праворуч — шалено' },
+      { icon: '↕', gesture: 'Піднімай руку', effect: 'Вобл глибший і яскравіший, внизу — глухий бас' },
+      { icon: '🖐', gesture: 'Розводь пальці', effect: 'Резонанс зростає — бас «кричить»' },
+      { icon: '✊', gesture: 'Стисни кулак', effect: 'Бас затихає — використовуй як паузу для «дропу»' },
+    ],
+    tip: 'Тримай 1 палець біля лівого краю, а потім різко відкрий долоню й повези руку вправо — це «дроп».',
+    paramLabels: ['Нота-бас (пальці)', 'Гучність (кулак — пауза)', 'Резонанс (розведення)', 'Швидкість воблу (X)'],
+    usesSample: false,
   },
 ];
 
@@ -140,13 +216,19 @@ export function normalizeModeId(id: string | undefined | null): ModeId {
   return 'ambient';
 }
 
+export type WaveChoice = 'auto' | 'sine' | 'triangle' | 'square' | 'sawtooth';
+
 export type Opts = {
   scale: ScaleId;
   root: number;
   reverb: number; // 0–100
+  echo: number; // 0–100: кількість «луни»
+  tone: number; // 0–100: яскравість (фільтр на виході)
+  volume: number; // 0–100: загальна гучність
+  wave: WaveChoice; // форма хвилі: auto — як задумав режим
 };
 
-export const DEFAULT_OPTS: Opts = { scale: 'minor', root: 9, reverb: 50 };
+export const DEFAULT_OPTS: Opts = { scale: 'minor', root: 9, reverb: 50, echo: 0, tone: 100, volume: 85, wave: 'auto' };
 
 export type LiveParams = {
   freq: number;
@@ -195,6 +277,12 @@ export interface ModeVoice {
 }
 
 const SAMPLE_BASE = 261.63;
+
+// Якщо користувач вибрав «характер» звуку — використовуємо його замість хвилі за замовчуванням
+function pickWave(env: Env, fallback: OscillatorType): OscillatorType {
+  const w = env.getOpts().wave;
+  return w && w !== 'auto' ? w : fallback;
+}
 
 // ---------- допоміжне ----------
 
@@ -296,7 +384,7 @@ class AmbientMode implements ModeVoice {
 
   private createVoice(): PadVoice {
     const { ctx } = this.env;
-    const tone = new ToneSource(ctx, 'triangle', [-9, 9], this.env.getSample(), SAMPLE_BASE);
+    const tone = new ToneSource(ctx, pickWave(this.env, 'triangle'), [-9, 9], this.env.getSample(), SAMPLE_BASE);
     const chain = makeChain(this.env, 'lowpass', 1500);
     tone.out.connect(chain.filter);
     return {
@@ -392,7 +480,7 @@ class LeadMode implements ModeVoice {
   constructor(env: Env) {
     this.env = env;
     const { ctx } = env;
-    this.tone = new ToneSource(ctx, 'sawtooth', [-7, 7], env.getSample(), SAMPLE_BASE);
+    this.tone = new ToneSource(ctx, pickWave(env, 'sawtooth'), [-7, 7], env.getSample(), SAMPLE_BASE);
     this.chain = makeChain(env, 'lowpass', 2000);
     this.chain.filter.Q.value = 5;
     this.tone.out.connect(this.chain.filter);
@@ -749,7 +837,7 @@ class ThereminMode implements ModeVoice {
   constructor(env: Env) {
     this.env = env;
     const { ctx } = env;
-    this.tone = new ToneSource(ctx, 'sine', [0], env.getSample(), SAMPLE_BASE);
+    this.tone = new ToneSource(ctx, pickWave(env, 'sine'), [0], env.getSample(), SAMPLE_BASE);
     this.chain = makeChain(env, 'lowpass', 5000);
     this.trem = ctx.createGain();
     this.trem.gain.value = 1;
@@ -864,7 +952,7 @@ class ChordMode implements ModeVoice {
     const chain = makeChain(this.env, 'lowpass', 2400);
     const revMul = this.env.getOpts().reverb / 50;
     const tones = midis.map((m) => {
-      const t = new ToneSource(ctx, 'triangle', [-6, 6], this.env.getSample(), SAMPLE_BASE);
+      const t = new ToneSource(ctx, pickWave(this.env, 'triangle'), [-6, 6], this.env.getSample(), SAMPLE_BASE);
       t.setFreq(midiToFreq(m), 0.001);
       t.out.connect(chain.filter);
       return t;
@@ -921,7 +1009,7 @@ class ChordMode implements ModeVoice {
     // ----- мелодія (друга рука) -----
     if (melodyHand) {
       if (!this.melodyTone) {
-        this.melodyTone = new ToneSource(ctx, 'triangle', [0], this.env.getSample(), SAMPLE_BASE);
+        this.melodyTone = new ToneSource(ctx, pickWave(this.env, 'triangle'), [0], this.env.getSample(), SAMPLE_BASE);
         this.melodyChain = makeChain(this.env, 'lowpass', 3500);
         this.melodyTone.out.connect(this.melodyChain.filter);
         this.melodyTone.setFreq(440, 0.001);
@@ -962,8 +1050,351 @@ class ChordMode implements ModeVoice {
   }
 }
 
+// ============================================================
+// 7. Арпеджіо
+// ============================================================
+
+const ARP_STEPS = [0, 2, 4, -1]; // ноти акорду (в ступенях гами): 1-3-5 і октава (-1 = повна довжина гами)
+
+class ArpMode implements ModeVoice {
+  params = emptyParams();
+  private env: Env;
+  private chain: Chain;
+  private nextTime = 0;
+  private step = 0;
+  private dir = 1;
+  private lastFreq = 0;
+
+  constructor(env: Env) {
+    this.env = env;
+    this.chain = makeChain(env, 'lowpass', 3000);
+    this.chain.gain.gain.value = 1;
+  }
+
+  private playNote(time: number, freq: number, len: number, level: number) {
+    const { ctx } = this.env;
+    const osc = ctx.createOscillator();
+    osc.type = pickWave(this.env, 'square');
+    osc.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.linearRampToValueAtTime(level, time + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + len);
+    osc.connect(g);
+    g.connect(this.chain.filter);
+    osc.start(time);
+    osc.stop(time + len + 0.05);
+    osc.onended = () => {
+      osc.disconnect();
+      g.disconnect();
+    };
+  }
+
+  update(hands: Hand[]): Spawn[] {
+    const { ctx } = this.env;
+    const opts = this.env.getOpts();
+    const spawns: Spawn[] = [];
+    const p = baseParams(hands);
+    const h = hands[0];
+    const len = scaleLength(opts.scale);
+
+    if (!h || h.f.fingers === 0) {
+      this.nextTime = 0;
+      this.step = 0;
+      this.dir = 1;
+      this.params = p;
+      p.hint = h ? 'Кулак — пауза. Покажи 1–5 пальців, щоб запустити арпеджіо' : p.hint;
+      return spawns;
+    }
+
+    const f = h.f;
+    const degree = f.fingers - 1;
+    const bpm = lerp(70, 220, f.dx);
+    const stepDur = 60 / bpm / 2;
+    const mode = f.height > 0.66 ? 'rand' : f.height > 0.33 ? 'pingpong' : 'up';
+    const noteLen = stepDur * lerp(0.35, 1.5, f.spread);
+    const cutoff = 700 + f.spread * 4300;
+    setParam(this.chain.filter.frequency, cutoff, ctx, 0.05);
+    setParam(this.chain.send.gain, 0.22 * (opts.reverb / 50), ctx);
+    setParam(this.chain.pan.pan, clamp((f.dx - 0.5) * 0.5, -1, 1), ctx);
+
+    if (this.nextTime < ctx.currentTime - 0.1 || this.nextTime === 0) this.nextTime = ctx.currentTime + 0.03;
+
+    while (this.nextTime < ctx.currentTime + 0.12) {
+      let idx = this.step;
+      if (mode === 'rand') idx = Math.floor(Math.random() * ARP_STEPS.length);
+      const off = ARP_STEPS[idx] < 0 ? len : ARP_STEPS[idx];
+      const midi = scaleMidi(opts.scale, opts.root, degree + off, 55);
+      this.lastFreq = midiToFreq(midi);
+      this.playNote(this.nextTime, this.lastFreq, noteLen, 0.2);
+      spawns.push({ x: f.rawX, y: f.rawY, color: '#ff8a4c', count: 2 });
+
+      if (mode === 'pingpong') {
+        this.step += this.dir;
+        if (this.step >= ARP_STEPS.length - 1) this.dir = -1;
+        if (this.step <= 0) this.dir = 1;
+      } else {
+        this.step = (this.step + 1) % ARP_STEPS.length;
+      }
+      this.nextTime += stepDur;
+    }
+
+    p.freq = this.lastFreq;
+    p.pitchLabel = freqToLabel(this.lastFreq);
+    p.pitch = clamp01(this.step / (ARP_STEPS.length - 1));
+    p.volume = 0.75;
+    p.timbre = f.spread;
+    p.fx = f.dx;
+    const patName = mode === 'rand' ? 'випадково' : mode === 'pingpong' ? 'вгору-вниз' : 'вгору';
+    p.hint = `Акорд ${f.fingers} · ${Math.round(bpm)} BPM · ${patName}`;
+    this.params = p;
+    return spawns.slice(0, 1);
+  }
+
+  stop() {
+    this.chain.dispose();
+  }
+}
+
+// ============================================================
+// 8. Хор (формантний синтез голосних)
+// ============================================================
+
+// Частоти формант (Гц) для голосних У, О, А, Е, І
+const VOWELS: { name: string; f: [number, number, number] }[] = [
+  { name: 'У', f: [325, 700, 2530] },
+  { name: 'О', f: [450, 800, 2830] },
+  { name: 'А', f: [800, 1150, 2900] },
+  { name: 'Е', f: [500, 1800, 2600] },
+  { name: 'І', f: [320, 2250, 3000] },
+];
+const FORMANT_GAIN = [1, 0.55, 0.3];
+
+class ChoirMode implements ModeVoice {
+  params = emptyParams();
+  private env: Env;
+  private tone: ToneSource;
+  private chain: Chain;
+  private bands: BiquadFilterNode[] = [];
+  private lfo: OscillatorNode;
+  private lfoGain: GainNode;
+  private height = new Smooth(0.5);
+  private vol = new Smooth(0);
+  private open = new Smooth(0.5);
+
+  constructor(env: Env) {
+    this.env = env;
+    const { ctx } = env;
+    this.tone = new ToneSource(ctx, pickWave(env, 'sawtooth'), [-9, 0, 9], env.getSample(), SAMPLE_BASE);
+    this.chain = makeChain(env, 'lowpass', 7000);
+    const sum = ctx.createGain();
+    sum.gain.value = 2.6;
+    FORMANT_GAIN.forEach((g, i) => {
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.Q.value = i === 0 ? 7 : 11;
+      bp.frequency.value = VOWELS[2].f[i];
+      const gn = ctx.createGain();
+      gn.gain.value = g;
+      this.tone.out.connect(bp);
+      bp.connect(gn);
+      gn.connect(sum);
+      this.bands.push(bp);
+    });
+    sum.connect(this.chain.filter);
+
+    this.lfo = ctx.createOscillator();
+    this.lfo.frequency.value = 5.2;
+    this.lfoGain = ctx.createGain();
+    this.lfoGain.gain.value = 0;
+    this.lfo.connect(this.lfoGain);
+    this.tone.detuneParams.forEach((d) => this.lfoGain.connect(d));
+    this.lfo.start();
+    this.tone.setFreq(220, 0.01);
+  }
+
+  update(hands: Hand[]): Spawn[] {
+    const { ctx } = this.env;
+    const opts = this.env.getOpts();
+    const cal = this.env.getCal();
+    const a = alphaOf(cal, 0.7);
+    const p = baseParams(hands);
+    const h = hands[0];
+    const len = scaleLength(opts.scale);
+
+    if (!h) {
+      this.vol.step(0, 0.3);
+      setParam(this.chain.gain.gain, 0, ctx, 0.12);
+      this.params = p;
+      return [];
+    }
+
+    const f = h.f;
+    const height = this.height.step(f.height, a);
+    const degree = Math.round(height * (len * 2 - 1));
+    const midi = scaleMidi(opts.scale, opts.root, degree, 48);
+    const freq = midiToFreq(midi);
+    this.tone.setFreq(freq, 0.05);
+
+    const openness = this.open.step(f.openness, a);
+    const pos = clamp01(openness) * (VOWELS.length - 1);
+    const i0 = Math.min(VOWELS.length - 2, Math.floor(pos));
+    const t = pos - i0;
+    for (let i = 0; i < 3; i++) {
+      const fr = lerp(VOWELS[i0].f[i], VOWELS[i0 + 1].f[i], t);
+      setParam(this.bands[i].frequency, fr, ctx, 0.06);
+    }
+    const vowel = VOWELS[Math.round(pos)].name;
+
+    const vol = this.vol.step(lerp(0.06, 0.34, f.proximity), a);
+    setParam(this.chain.gain.gain, vol, ctx, 0.08);
+
+    const depth = clamp01((Math.abs(f.tilt) - 0.1) * 1.8);
+    setParam(this.lfoGain.gain, depth * 45, ctx, 0.1);
+    setParam(this.chain.send.gain, 0.5 * (opts.reverb / 50), ctx);
+    setParam(this.chain.pan.pan, clamp((f.dx - 0.5) * 0.6, -1, 1), ctx);
+
+    p.freq = freq;
+    p.pitchLabel = freqToLabel(freq);
+    p.pitch = height;
+    p.volume = vol / 0.34;
+    p.timbre = openness;
+    p.fx = depth;
+    p.hint = `Голосна «${vowel}» · нота ${p.pitchLabel}`;
+    this.params = p;
+    return [];
+  }
+
+  stop() {
+    this.tone.stop();
+    this.chain.dispose();
+    try {
+      this.lfo.stop();
+    } catch {
+      // вже зупинено
+    }
+  }
+}
+
+// ============================================================
+// 9. Вобл-бас
+// ============================================================
+
+class WobbleMode implements ModeVoice {
+  params = emptyParams();
+  private env: Env;
+  private tone: ToneSource;
+  private sub: OscillatorNode;
+  private subGain: GainNode;
+  private chain: Chain;
+  private lfo: OscillatorNode;
+  private lfoGain: GainNode;
+  private degree = 0;
+  private rate = new Smooth(2);
+  private lastDegree = -1;
+
+  constructor(env: Env) {
+    this.env = env;
+    const { ctx } = env;
+    this.tone = new ToneSource(ctx, pickWave(env, 'sawtooth'), [-14, 0, 14], null, SAMPLE_BASE);
+    this.chain = makeChain(env, 'lowpass', 600);
+    this.chain.filter.Q.value = 8;
+    this.sub = ctx.createOscillator();
+    this.sub.type = 'sine';
+    this.subGain = ctx.createGain();
+    this.subGain.gain.value = 0.9;
+    this.sub.connect(this.subGain);
+    const mix = ctx.createGain();
+    mix.gain.value = 0.8;
+    this.tone.out.connect(mix);
+    this.subGain.connect(mix);
+    mix.connect(this.chain.filter);
+    this.sub.start();
+
+    this.lfo = ctx.createOscillator();
+    this.lfo.type = 'sine';
+    this.lfo.frequency.value = 2;
+    this.lfoGain = ctx.createGain();
+    this.lfoGain.gain.value = 0;
+    this.lfo.connect(this.lfoGain);
+    this.lfoGain.connect(this.chain.filter.frequency);
+    this.lfo.start();
+    this.tone.setFreq(55, 0.01);
+    this.sub.frequency.value = 55;
+  }
+
+  update(hands: Hand[]): Spawn[] {
+    const { ctx } = this.env;
+    const opts = this.env.getOpts();
+    const spawns: Spawn[] = [];
+    const p = baseParams(hands);
+    const h = hands[0];
+
+    if (!h) {
+      setParam(this.chain.gain.gain, 0, ctx, 0.08);
+      this.params = p;
+      return spawns;
+    }
+
+    const f = h.f;
+    const gate = f.fingers > 0;
+    if (gate) this.degree = f.fingers - 1;
+
+    const midi = scaleMidi(opts.scale, opts.root, this.degree, 33);
+    const freq = midiToFreq(midi);
+    this.tone.setFreq(freq, 0.02);
+    this.sub.frequency.setTargetAtTime(freq, ctx.currentTime, 0.02);
+
+    // швидкість воблу: від 0.6 до 14 Гц (експоненційно, щоб було музично)
+    const rate = this.rate.step(0.6 * Math.pow(23, f.dx), 0.25);
+    setParam(this.lfo.frequency, rate, ctx, 0.05);
+
+    const base = 160 + f.height * 700;
+    const depth = 250 + f.height * 3200;
+    setParam(this.chain.filter.frequency, base, ctx, 0.05);
+    setParam(this.lfoGain.gain, depth, ctx, 0.08);
+    setParam(this.chain.filter.Q, 2 + f.spread * 14, ctx, 0.06);
+
+    setParam(this.chain.gain.gain, gate ? 0.32 : 0, ctx, gate ? 0.02 : 0.07);
+    setParam(this.chain.send.gain, 0.1 * (opts.reverb / 50), ctx);
+    setParam(this.chain.pan.pan, 0, ctx);
+
+    if (gate && this.degree !== this.lastDegree) {
+      this.lastDegree = this.degree;
+      spawns.push({ x: f.rawX, y: f.rawY, color: '#4cc9ff', count: 8 });
+    }
+
+    p.freq = freq;
+    p.pitchLabel = freqToLabel(freq);
+    p.pitch = clamp01(this.degree / 4);
+    p.volume = gate ? 0.8 : 0;
+    p.timbre = f.spread;
+    p.fx = clamp01(Math.log(rate / 0.6) / Math.log(23));
+    p.hint = gate ? `Нота ${p.pitchLabel} · вобл ${rate.toFixed(1)} Гц` : 'Кулак — пауза. Покажи пальці, щоб дропнути бас';
+    this.params = p;
+    return spawns;
+  }
+
+  stop() {
+    this.tone.stop();
+    this.chain.dispose();
+    try {
+      this.sub.stop();
+      this.lfo.stop();
+    } catch {
+      // вже зупинено
+    }
+  }
+}
+
 export function createMode(id: ModeId, env: Env): ModeVoice {
   switch (id) {
+    case 'arp':
+      return new ArpMode(env);
+    case 'choir':
+      return new ChoirMode(env);
+    case 'wobble':
+      return new WobbleMode(env);
     case 'lead':
       return new LeadMode(env);
     case 'pluck':

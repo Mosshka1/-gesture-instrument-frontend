@@ -60,13 +60,21 @@ function Modes() {
                 <div className="mode-icon">{m.icon}</div>
                 <h3>{m.name}</h3>
                 <p className="desc">{m.desc}</p>
-                <div className="mappings">
-                  {m.mappings.map(([from, to]) => (
-                    <div className="mapping" key={from}>
-                      <span>{from}</span>
-                      <span>{to}</span>
-                    </div>
+                <p className="tagline">{m.tagline}</p>
+                <ol className="howto compact">
+                  {m.howTo.map((h, i) => (
+                    <li key={i}>
+                      <span className="ht-icon">{h.icon}</span>
+                      <span className="ht-text">
+                        <b>{h.gesture}</b>
+                        <em>{h.effect}</em>
+                      </span>
+                    </li>
                   ))}
+                </ol>
+                <div className="guide-tip">
+                  <span>💡</span>
+                  <p>{m.tip}</p>
                 </div>
                 {isSel ? (
                   <button className="btn primary block" onClick={() => navigate('/play')}>
