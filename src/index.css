@@ -1375,7 +1375,7 @@ table.table {
 
 .rec-item {
   display: grid;
-  grid-template-columns: auto minmax(160px, 260px) 1fr auto auto auto;
+  grid-template-columns: auto minmax(160px, 240px) minmax(120px, 1fr) 96px 150px auto;
   align-items: center;
   gap: 20px;
   padding: 16px 22px;
@@ -1446,6 +1446,55 @@ table.table {
 .rec-dur {
   font-family: var(--mono);
   color: var(--muted);
+  font-size: 13px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rec-meta-compact {
+  display: none;
+}
+
+.rec-tag-cell {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.rec-item {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rec-item.playing {
+  box-shadow: 0 0 0 1px rgba(61, 232, 200, 0.25), 0 10px 40px rgba(61, 232, 200, 0.06);
+}
+
+.rec-item.playing .rec-dur {
+  color: var(--teal);
+}
+
+/* пульсація, поки йде запис */
+@keyframes rec-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 92, 112, 0.55); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 92, 112, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 92, 112, 0); }
+}
+
+.stage-badge.tr .dot.off {
+  animation: rec-pulse 1.4s ease-out infinite;
+}
+
+.btn.rec.recording {
+  background: transparent;
+  color: var(--red);
+  border: 1px solid rgba(255, 92, 112, 0.7);
+  animation: rec-pulse 1.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-badge.tr .dot.off,
+  .btn.rec.recording {
+    animation: none;
+  }
 }
 
 @media (max-width: 1000px) {
@@ -1453,8 +1502,12 @@ table.table {
     grid-template-columns: auto 1fr auto;
   }
   .mini-wave,
-  .rec-dur {
+  .rec-dur,
+  .rec-tag-cell {
     display: none;
+  }
+  .rec-meta-compact {
+    display: inline;
   }
 }
 
@@ -1661,7 +1714,7 @@ table.table {
   margin-bottom: 16px;
 }
 
-/* ---------- Туторіал ---------- */
+/* ---------- Навчання ---------- */
 
 .tut-grid {
   display: grid;
@@ -2147,3 +2200,12 @@ table.table {
 .loop-actions { display: flex; gap: 10px; margin-bottom: 8px; }
 .loop-actions .btn { flex: 1; }
 .loop-actions .btn.block { width: 100%; }
+
+/* ---------- Прослуховування запису перед збереженням ---------- */
+.rec-preview {
+  width: 100%;
+  height: 40px;
+  margin: 6px 0 14px;
+  border-radius: 12px;
+  color-scheme: dark;
+}

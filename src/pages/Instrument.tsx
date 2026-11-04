@@ -16,7 +16,7 @@ import type { ScaleId } from '../audio/music';
 import { createPreset, getErrorMessage, getSounds, markPresetUsed, updatePreset, uploadRecording, uploadUrl } from '../api';
 import type { ApiPreset, ApiSound } from '../api';
 import { fetchCalibration, loadCachedCalibration, persistCalibration } from '../lib/calibration';
-import { formatDuration } from '../lib/format';
+import { formatBytes, formatDuration } from '../lib/format';
 
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; color: string };
 
@@ -398,16 +398,45 @@ function Instrument() {
   }, []);
 
   // ---------- запис ----------
-  const startRecording = () => {
+  const MAX_REC_SECONDS = 300;
+
+  // обираємо формат, який справді вміє записувати цей браузер (Chrome — webm, Safari — mp4)
+  const pickRecorderMime = () => {
+    const variants = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+    return variants.find((t) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t));
+  };
+
+  const startRecording = async () => {
     const ctx = audioCtxRef.current;
     const master = masterRef.current;
-    if (!ctx || !master) return;
+    if (!ctx || !master || recorderRef.current?.state === 'recording') return;
+    if (typeof MediaRecorder === 'undefined') {
+      setNotice('Цей браузер не підтримує запис звуку');
+      return;
+    }
+
+    // на телефонах контекст може бути призупинений — тоді запис вийде тихим
+    if (ctx.state !== 'running') {
+      try {
+        await ctx.resume();
+      } catch {
+        // спробуємо все одно
+      }
+    }
 
     const dest = ctx.createMediaStreamDestination();
     master.connect(dest);
     recDestRef.current = dest;
 
-    const recorder = new MediaRecorder(dest.stream);
+    let recorder: MediaRecorder;
+    try {
+      const mimeType = pickRecorderMime();
+      recorder = new MediaRecorder(dest.stream, mimeType ? { mimeType, audioBitsPerSecond: 128000 } : undefined);
+    } catch {
+      master.disconnect(dest);
+      setNotice('Не вдалось почати запис у цьому браузері');
+      return;
+    }
     recChunksRef.current = [];
     recModeRef.current = modeId;
     recStartRef.current = Date.now();
@@ -415,8 +444,12 @@ function Instrument() {
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) recChunksRef.current.push(e.data);
     };
+    recorder.onerror = () => {
+      setNotice('Під час запису сталась помилка');
+      setIsRecording(false);
+    };
     recorder.onstop = () => {
-      const duration = Math.round((Date.now() - recStartRef.current) / 1000);
+      const duration = Math.max(1, Math.round((Date.now() - recStartRef.current) / 1000));
       // Safari записує в mp4, Chrome — у webm: беремо справжній тип, який видав рекордер
       const blob = new Blob(recChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
       try {
@@ -424,26 +457,51 @@ function Instrument() {
       } catch {
         // вже відключено
       }
+      recorderRef.current = null;
+      if (blob.size < 1024 || Date.now() - recStartRef.current < 800) {
+        setNotice('Запис вийшов занадто коротким — спробуй ще раз');
+        return;
+      }
       setRecName('Моя мелодія');
       setPendingRec({ blob, duration, mode: recModeRef.current });
     };
 
-    recorder.start();
+    // timeslice: дані віддаються частинами, тож нічого не губиться, якщо вкладку закрито
+    recorder.start(1000);
     recorderRef.current = recorder;
     setRecSeconds(0);
     setIsRecording(true);
   };
 
   const stopRecording = () => {
-    recorderRef.current?.stop();
+    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
     setIsRecording(false);
   };
 
   useEffect(() => {
     if (!isRecording) return;
-    const timer = setInterval(() => setRecSeconds(Math.round((Date.now() - recStartRef.current) / 1000)), 500);
+    const timer = setInterval(() => {
+      const sec = Math.round((Date.now() - recStartRef.current) / 1000);
+      setRecSeconds(sec);
+      if (sec >= MAX_REC_SECONDS) {
+        setNotice('Досягнуто ліміт запису — 5 хвилин. Запис зупинено.');
+        stopRecording();
+      }
+    }, 500);
     return () => clearInterval(timer);
   }, [isRecording]);
+
+  // попереднє прослуховування перед збереженням
+  const [previewUrl, setPreviewUrl] = useState('');
+  useEffect(() => {
+    if (!pendingRec) {
+      setPreviewUrl('');
+      return;
+    }
+    const url = URL.createObjectURL(pendingRec.blob);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendingRec]);
 
   const saveRecording = async () => {
     if (!pendingRec) return;
@@ -748,7 +806,7 @@ function Instrument() {
                 </button>
               )}
               {isRecording ? (
-                <button className="btn rec rec-btn" onClick={stopRecording}>
+                <button className="btn rec recording rec-btn" onClick={stopRecording}>
                   ■ Стоп
                 </button>
               ) : (
@@ -873,8 +931,15 @@ function Instrument() {
             </>
           }
         >
+          {previewUrl && (
+            <>
+              <label className="field">Прослухай перед збереженням</label>
+              <audio className="rec-preview" src={previewUrl} controls preload="metadata" />
+            </>
+          )}
           <label className="field">Назва мелодії</label>
           <input className="input" value={recName} autoFocus onChange={(e) => setRecName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveRecording()} />
+          <p className="hint" style={{ marginBottom: 0 }}>Розмір {formatBytes(pendingRec.blob.size)}</p>
         </Modal>
       )}
     </>

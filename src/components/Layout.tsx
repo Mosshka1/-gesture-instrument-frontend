@@ -36,7 +36,7 @@ function Layout() {
 
         <NavLink to="/tutorial" className={(s) => cls(s) + ' side-help'} title="Як грати">
           <IconHelp />
-          Туторіал
+          Навчання
         </NavLink>
         <NavLink to="/profile" title="Профіль" className="side-profile">
           {({ isActive }) => <div className={'avatar-sm' + (isActive ? ' active' : '')}>{initials(user?.fullName)}</div>}

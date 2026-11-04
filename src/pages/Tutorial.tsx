@@ -67,7 +67,7 @@ function Tutorial() {
 
   return (
     <>
-      <PageHeader crumb="Допомога / Туторіал" title="Як грати">
+      <PageHeader crumb="Допомога / Навчання" title="Як грати">
         {!isFinished && (
           <button className="btn" onClick={finish}>
             Пропустити туторіал

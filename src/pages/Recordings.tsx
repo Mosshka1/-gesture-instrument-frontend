@@ -64,14 +64,25 @@ function Recordings() {
     }
     audioRef.current?.pause();
     const audio = new Audio(uploadUrl(rec.fileName));
+    // webm з MediaRecorder не має тривалості в заголовку (duration = Infinity),
+    // тому беремо тривалість із запису в базі
+    const total = () => (audio.duration && isFinite(audio.duration) ? audio.duration : rec.durationSec || 0);
     audio.ontimeupdate = () => {
-      if (audio.duration && isFinite(audio.duration)) setProgress(audio.currentTime / audio.duration);
+      const t = total();
+      if (t) setProgress(Math.min(1, audio.currentTime / t));
     };
     audio.onended = () => {
       setPlayingId(null);
       setProgress(0);
     };
-    audio.play().catch(() => setError('Не вдалось відтворити запис'));
+    audio.onerror = () => {
+      setPlayingId(null);
+      setError('Не вдалось відтворити запис. Можливо, файл зник із сервера — збережи мелодію ще раз.');
+    };
+    audio.play().catch(() => {
+      setPlayingId(null);
+      setError('Не вдалось відтворити запис');
+    });
     audioRef.current = audio;
     setProgress(0);
     setPlayingId(rec.id);
@@ -80,9 +91,26 @@ function Recordings() {
   const seek = (rec: ApiRecording, e: React.MouseEvent<HTMLDivElement>) => {
     if (playingId !== rec.id || !audioRef.current) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
-    if (audioRef.current.duration && isFinite(audioRef.current.duration)) {
-      audioRef.current.currentTime = ratio * audioRef.current.duration;
+    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    const a = audioRef.current;
+    const t = a.duration && isFinite(a.duration) ? a.duration : rec.durationSec || 0;
+    if (t) a.currentTime = ratio * t;
+  };
+
+  const downloadRec = async (rec: ApiRecording) => {
+    try {
+      const res = await fetch(uploadUrl(rec.fileName));
+      if (!res.ok) throw new Error('bad');
+      const blob = await res.blob();
+      const ext = rec.fileName.split('.').pop() || 'webm';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${rec.name}.${ext}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setError('Не вдалось завантажити файл');
     }
   };
 
@@ -176,8 +204,11 @@ function Recordings() {
                     <div className="rec-name">{rec.name}</div>
                     <div className="rec-meta">
                       {formatDate(rec.createdAt)}
-                      {meta ? ` · ${meta.name}` : ''}
-                      {rec.durationSec != null ? ` · ${formatDuration(rec.durationSec)}` : ''}
+                      {rec.sizeBytes ? ` · ${formatBytes(rec.sizeBytes)}` : ''}
+                      <span className="rec-meta-compact">
+                        {meta ? ` · ${meta.name}` : ''}
+                        {rec.durationSec != null ? ` · ${formatDuration(rec.durationSec)}` : ''}
+                      </span>
                     </div>
                   </div>
 
@@ -187,20 +218,23 @@ function Recordings() {
                     ))}
                   </div>
 
-                  <span className="rec-dur">{rec.durationSec != null ? formatDuration(rec.durationSec) : '—'}</span>
+                  <span className="rec-dur">
+                    {isPlaying && rec.durationSec ? `${formatDuration(Math.round(progress * rec.durationSec))} / ` : ''}
+                    {rec.durationSec != null ? formatDuration(rec.durationSec) : '—'}
+                  </span>
 
-                  {meta ? (
-                    <span className="tag" style={{ ['--c' as string]: meta.color }}>
-                      {meta.name}
-                    </span>
-                  ) : (
-                    <span />
-                  )}
+                  <span className="rec-tag-cell">
+                    {meta && (
+                      <span className="tag" style={{ ['--c' as string]: meta.color }}>
+                        {meta.name}
+                      </span>
+                    )}
+                  </span>
 
                   <div className="actions">
-                    <a className="icon-btn" title="Завантажити" href={uploadUrl(rec.fileName)} download={`${rec.name}.webm`} target="_blank" rel="noreferrer">
+                    <button className="icon-btn" title="Завантажити" onClick={() => downloadRec(rec)}>
                       <IconDownload />
-                    </a>
+                    </button>
                     <button
                       className="icon-btn"
                       title="Перейменувати"
