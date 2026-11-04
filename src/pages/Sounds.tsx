@@ -3,6 +3,7 @@ import PageHeader from '../components/PageHeader';
 import { IconTrash } from '../components/Icons';
 import { addFreesoundSound, deleteSound, getErrorMessage, getSounds, searchFreesound, uploadSound, uploadUrl } from '../api';
 import type { ApiSound, FreesoundResult } from '../api';
+import { formatBytes } from '../lib/format';
 
 type SoundType = 'instrument' | 'background';
 
@@ -24,10 +25,25 @@ function SoundSection({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [playingId, setPlayingId] = useState<number | null>(null);
+  const [drag, setDrag] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => () => audioRef.current?.pause(), []);
+
+  const pickFile = (f: File | null | undefined) => {
+    if (!f) return;
+    if (!f.type.startsWith('audio/')) {
+      setError('Можна завантажувати лише аудіофайли (mp3, wav, ogg, webm…)');
+      return;
+    }
+    if (f.size > 10 * 1024 * 1024) {
+      setError('Файл завеликий — максимум 10 МБ');
+      return;
+    }
+    setError('');
+    setFile(f);
+  };
 
   const upload = async () => {
     if (!file) {
@@ -87,13 +103,37 @@ function SoundSection({
       <input className="input" value={name} placeholder="Наприклад: Моя гітара" onChange={(e) => setName(e.target.value)} />
 
       <label className="field">Аудіофайл (до 10 МБ)</label>
-      <input
-        ref={inputRef}
-        className="input"
-        type="file"
-        accept="audio/*"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-      />
+      <div
+        className={'dropzone' + (drag ? ' over' : '') + (file ? ' has-file' : '')}
+        role="button"
+        tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), inputRef.current?.click())}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDrag(true);
+        }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDrag(false);
+          pickFile(e.dataTransfer.files?.[0]);
+        }}
+      >
+        <input ref={inputRef} type="file" accept="audio/*" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
+        <span className="dz-icon">{file ? '♪' : '⇪'}</span>
+        {file ? (
+          <>
+            <span className="dz-title">{file.name}</span>
+            <span className="dz-sub">{formatBytes(file.size)} · натисни, щоб замінити</span>
+          </>
+        ) : (
+          <>
+            <span className="dz-title">Перетягни файл сюди</span>
+            <span className="dz-sub">або натисни, щоб обрати</span>
+          </>
+        )}
+      </div>
 
       {error && <div className="error-box">{error}</div>}
 

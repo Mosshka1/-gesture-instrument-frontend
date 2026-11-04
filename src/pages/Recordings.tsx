@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
+import Skeleton from '../components/Skeleton';
 import { IconDownload, IconEdit, IconTrash } from '../components/Icons';
 import { deleteRecording, getErrorMessage, getRecordings, renameRecording, uploadUrl } from '../api';
 import type { ApiRecording } from '../api';
@@ -182,11 +183,14 @@ function Recordings() {
         {error && <div className="error-box" style={{ marginTop: 0, marginBottom: 16 }}>{error}</div>}
 
         {loading ? (
-          <div className="empty">Завантажуємо…</div>
+          <Skeleton rows={3} />
         ) : items.length === 0 ? (
           <div className="card empty">
             <h3>Записів ще немає</h3>
             <p>На сторінці «Грати» натисни «Записати», пограй і збережи мелодію — вона з’явиться тут.</p>
+            <button className="btn primary" style={{ marginTop: 18 }} onClick={() => navigate('/play')}>
+              ● Записати першу мелодію
+            </button>
           </div>
         ) : (
           <div className="rec-list">

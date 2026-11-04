@@ -28,10 +28,10 @@ function AuthHero() {
         </defs>
         <g transform="translate(70 40) scale(1.05)" filter="url(#glow)">
           {lines.map(([a, b], i) => (
-            <line key={i} x1={joints[a][0]} y1={joints[a][1]} x2={joints[b][0]} y2={joints[b][1]} stroke="#3de8c8" strokeWidth="3.5" strokeLinecap="round" />
+            <line key={i} x1={joints[a][0]} y1={joints[a][1]} x2={joints[b][0]} y2={joints[b][1]} stroke="#3de8c8" strokeWidth="3.5" strokeLinecap="round" pathLength={1} className="bone" style={{ animationDelay: `${i * 0.05}s` }} />
           ))}
           {joints.map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r={tips.includes(i) ? 8 : 5.5} fill={tips.includes(i) ? '#c6f23a' : '#fff'} />
+            <circle key={i} cx={x} cy={y} r={tips.includes(i) ? 8 : 5.5} fill={tips.includes(i) ? '#c6f23a' : '#fff'} className={tips.includes(i) ? 'joint tip' : 'joint'} style={{ animationDelay: `${0.6 + i * 0.04}s` }} />
           ))}
         </g>
         {[0, 1, 2, 3].map((i) => (

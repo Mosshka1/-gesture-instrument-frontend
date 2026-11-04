@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
+import Skeleton from '../components/Skeleton';
 import { IconEdit, IconTrash } from '../components/Icons';
 import { createPreset, deletePreset, getErrorMessage, getPresets, markPresetUsed, updatePreset } from '../api';
 import type { ApiPreset } from '../api';
@@ -189,7 +190,7 @@ function Presets() {
 
         <div className="table-card">
           {loading ? (
-            <div className="empty">Завантажуємо…</div>
+            <Skeleton rows={3} height={64} />
           ) : visible.length === 0 ? (
             <div className="empty">
               <h3>{presets.length === 0 ? 'Пресетів ще немає' : 'Нічого не знайдено'}</h3>

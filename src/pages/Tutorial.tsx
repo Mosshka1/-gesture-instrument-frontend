@@ -70,7 +70,7 @@ function Tutorial() {
       <PageHeader crumb="Допомога / Навчання" title="Як грати">
         {!isFinished && (
           <button className="btn" onClick={finish}>
-            Пропустити туторіал
+            Пропустити навчання
           </button>
         )}
       </PageHeader>

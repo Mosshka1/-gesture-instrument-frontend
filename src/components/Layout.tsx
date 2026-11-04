@@ -1,13 +1,16 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { IconHelp, IconModes, IconPlay, IconPresets, IconRecordings, IconSounds } from './Icons';
 import { getStoredUser, initials } from '../lib/format';
 
 function Layout() {
   const user = getStoredUser();
+  const { pathname } = useLocation();
+  // кожен розділ має свій акцентний колір (див. [data-section] в index.css)
+  const section = pathname.split('/')[1] || 'play';
   const cls = ({ isActive }: { isActive: boolean }) => 'side-link' + (isActive ? ' active' : '');
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-section={section}>
       <nav className="sidebar">
         <div className="logo-mark" title="GestureSound" />
 
@@ -44,7 +47,9 @@ function Layout() {
       </nav>
 
       <main className="main">
-        <Outlet />
+        <div className="page-transition" key={pathname}>
+          <Outlet />
+        </div>
       </main>
     </div>
   );
