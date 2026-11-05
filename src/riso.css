@@ -2144,3 +2144,121 @@ select {
 .mode-intro .mi-close {
   color: var(--ink);
 }
+
+/* =====================================================================
+   Панель «Звук і ефекти»: один контейнер, без вкладених рамок
+   ===================================================================== */
+
+.sound-panel,
+.mode-guide,
+.panel .sound-panel,
+.panel .mode-guide {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+.panel {
+  min-width: 0;
+  padding: 20px 22px 22px;
+}
+.panel > * {
+  min-width: 0;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+.sp-block {
+  min-width: 0;
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--rule);
+}
+.sp-block:last-of-type {
+  border-bottom: 0;
+}
+.sp-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.sp-hint {
+  color: var(--ink-soft);
+}
+.note-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+.note-btn {
+  min-width: 0;
+  padding: 8px 0;
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+}
+.seg-btn,
+.note-btn {
+  box-shadow: none;
+  transition: transform 0.12s var(--ease), background 0.15s;
+}
+.seg-btn:hover,
+.note-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--s) 30%, var(--surface));
+}
+.seg-btn.active,
+.seg-btn.on,
+.note-btn.active,
+.note-btn.on,
+.app-shell .seg-btn.active,
+.app-shell .note-btn.active {
+  color: var(--on);
+  background: var(--s);
+  border-color: var(--ink);
+  font-weight: 700;
+  box-shadow: 2px 2px 0 var(--sh);
+  transform: translate(-1px, -1px);
+}
+.seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fx-row {
+  margin-top: 16px;
+}
+.fx-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.fx-head i {
+  display: inline-grid;
+  place-items: center;
+}
+input[type='range'] {
+  max-width: calc(100% - 18px);
+}
+.sp-block select,
+.sound-panel select {
+  width: 100%;
+  min-width: 0;
+}
