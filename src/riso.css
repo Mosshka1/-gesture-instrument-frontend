@@ -2084,3 +2084,63 @@ select {
 .sp-block select {
   width: 100%;
 }
+
+/* ---------- Панель звуку всередині шторки: без подвійної рамки ---------- */
+.sheet .sound-panel,
+.sheet .panel,
+.sheet .card {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+.sheet {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-shell input[type='range'] {
+  background: linear-gradient(90deg, var(--s) var(--fill, 50%), var(--surface) var(--fill, 50%));
+}
+.app-shell input[type='range']::-webkit-slider-thumb {
+  background: var(--paper-2);
+  box-shadow: 2px 2px 0 var(--sh);
+}
+.app-shell input[type='range']::-moz-range-thumb {
+  background: var(--paper-2);
+  box-shadow: 2px 2px 0 var(--sh);
+}
+.fx-head b {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--ink);
+}
+.fx-scale {
+  color: var(--ink-soft);
+}
+
+/* підказка режиму на камері */
+.mode-intro {
+  color: var(--ink);
+  background: var(--paper-2);
+  backdrop-filter: none;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 5px 5px 0 var(--sh);
+}
+.mode-intro .mi-title {
+  color: var(--ink);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.02em;
+}
+.mode-intro li,
+.mode-intro li span {
+  color: var(--ink);
+}
+.mode-intro .mi-close {
+  color: var(--ink);
+}
