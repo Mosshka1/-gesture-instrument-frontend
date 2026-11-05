@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { IconHelp, IconModes, IconPlay, IconPresets, IconRecordings, IconSounds } from './Icons';
+import Footer from './Footer';
 import ThemeToggle from './ThemeToggle';
 import { getStoredUser, initials } from '../lib/format';
 
@@ -51,6 +52,7 @@ function Layout() {
         <div className="page-transition" key={pathname}>
           <Outlet />
         </div>
+        <Footer />
       </main>
     </div>
   );

@@ -144,7 +144,7 @@ function SoundSection({
 
       <div style={{ marginTop: 22 }}>
         {sounds.length === 0 ? (
-          <p className="hint" style={{ marginBottom: 0 }}>Поки що порожньо.</p>
+          <p className="hint" style={{ marginBottom: 0 }}>Поки що порожньо: завантаж файл вище або додай звук із Freesound.</p>
         ) : (
           sounds.map((s) => (
             <div className="sound-item" key={s.id}>

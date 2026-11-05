@@ -26,7 +26,7 @@
   --bg: var(--paper);
   --bg-soft: var(--paper-2);
   --panel: var(--paper-2);
-  --panel-2: #ffffff;
+  --panel-2: var(--fill);
   --border: var(--rule);
   --border-strong: var(--ink);
   --text: var(--ink);
@@ -1723,4 +1723,166 @@ select option {
 .sp-block b,
 .sp-block output {
   color: var(--ink);
+}
+
+/* ---------- Порожні стани, підвал, вирівнювання висоти ---------- */
+
+.select.compact,
+.select {
+  background-color: var(--fill);
+  color: var(--ink);
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 66px);
+}
+.page-transition {
+  flex: 1;
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 56px 24px 60px;
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  background-image: radial-gradient(var(--dots) 1.4px, transparent 1.6px);
+  background-size: 14px 14px;
+}
+.es-art {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 22px;
+}
+.es-ring {
+  position: absolute;
+  inset: 0;
+  border: 3px dashed var(--ink);
+  border-radius: 50%;
+  animation: spin 40s linear infinite;
+}
+.es-disc {
+  position: absolute;
+  inset: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--on);
+  background: var(--s);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 5px 5px 0 var(--sh);
+  transform: rotate(-6deg);
+}
+:root[data-theme='dark'] .es-disc {
+  color: var(--fixed);
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.empty-state h3 {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(20px, 3vw, 28px);
+  letter-spacing: -0.03em;
+  text-transform: uppercase !important;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.empty-state p {
+  max-width: 46ch;
+  color: var(--ink-soft);
+  font-size: 15.5px;
+}
+.es-actions {
+  margin-top: 22px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.foot {
+  display: grid;
+  grid-template-columns: minmax(260px, 380px) 1fr;
+  align-items: end;
+  gap: 28px;
+  margin-top: 40px;
+  padding: 34px 36px 26px;
+  overflow: hidden;
+  border-top: 3px solid var(--ink);
+  background: var(--paper);
+}
+.foot-tip {
+  position: relative;
+  padding: 18px 20px;
+  color: var(--fixed);
+  background: var(--c, var(--s));
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  transform: rotate(-1.2deg);
+}
+.foot-tip b {
+  display: block;
+  font-family: var(--display);
+  font-size: 14px;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.foot-tip p {
+  font-size: 14.5px;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+.foot-tip a {
+  color: var(--fixed);
+  font-weight: 700;
+  text-decoration-color: var(--fixed);
+}
+.foot-tip a:hover {
+  background: var(--fixed);
+  color: var(--c);
+}
+.foot-big {
+  justify-self: end;
+  text-align: right;
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(44px, 9vw, 120px);
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+  text-transform: uppercase !important;
+  color: color-mix(in srgb, var(--s) 22%, transparent);
+  user-select: none;
+  white-space: nowrap;
+}
+@media (max-width: 820px), (max-height: 520px) {
+  .main {
+    min-height: calc(100vh - 60px);
+  }
+  .foot {
+    grid-template-columns: 1fr;
+    padding: 26px 16px 110px;
+    gap: 20px;
+  }
+  .foot-big {
+    justify-self: start;
+    text-align: left;
+    font-size: clamp(40px, 14vw, 64px);
+  }
+  .empty-state {
+    padding: 40px 18px 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .es-ring {
+    animation: none;
+  }
 }

@@ -11,6 +11,7 @@ import type { ModeId } from '../audio/modes';
 import { NOTE_NAMES, SCALES } from '../audio/music';
 import type { ScaleId } from '../audio/music';
 import { timeAgo } from '../lib/format';
+import EmptyState from '../components/EmptyState';
 import Glyph from '../components/Glyph';
 
 type SortKey = 'recent' | 'name' | 'used' | 'favorite';
@@ -209,14 +210,21 @@ function Presets() {
           {loading ? (
             <Skeleton rows={3} height={64} />
           ) : visible.length === 0 ? (
-            <div className="empty">
-              <h3>{presets.length === 0 ? 'Пресетів ще немає' : 'Нічого не знайдено'}</h3>
-              <p>
-                {presets.length === 0
+            <EmptyState
+              icon={presets.length === 0 ? 'grid' : 'sliders'}
+              title={presets.length === 0 ? 'Пресетів ще немає' : 'Нічого не знайдено'}
+              text={
+                presets.length === 0
                   ? 'Налаштуй звук на сторінці «Грати» і натисни «Зберегти пресет» — або створи його тут.'
-                  : 'Спробуй змінити пошук чи фільтр.'}
-              </p>
-            </div>
+                  : 'Спробуй змінити пошук чи фільтр.'
+              }
+            >
+              {presets.length === 0 && (
+                <button className="btn primary" onClick={() => navigate('/play')}>
+                  <Glyph name="play" /> Відкрити інструмент
+                </button>
+              )}
+            </EmptyState>
           ) : (
             <table className="table">
               <thead>

@@ -8,6 +8,7 @@ import { deleteRecording, getErrorMessage, getRecordings, renameRecording, uploa
 import type { ApiRecording } from '../api';
 import { MODES, getModeMeta } from '../audio/modes';
 import { formatBytes, formatDuration } from '../lib/format';
+import EmptyState from '../components/EmptyState';
 import Glyph from '../components/Glyph';
 
 const BARS = 40;
@@ -186,13 +187,11 @@ function Recordings() {
         {loading ? (
           <Skeleton rows={3} />
         ) : items.length === 0 ? (
-          <div className="card empty">
-            <h3>Записів ще немає</h3>
-            <p>На сторінці «Грати» натисни «Записати», пограй і збережи мелодію — вона з’явиться тут.</p>
-            <button className="btn primary" style={{ marginTop: 18 }} onClick={() => navigate('/play')}>
+          <EmptyState icon="note" title="Записів ще немає" text="На сторінці «Грати» натисни «Записати», пограй і збережи мелодію — вона з’явиться тут.">
+            <button className="btn primary" onClick={() => navigate('/play')}>
               <Glyph name="rec" /> Записати першу мелодію
             </button>
-          </div>
+          </EmptyState>
         ) : (
           <div className="rec-list">
             {items.map((rec) => {
