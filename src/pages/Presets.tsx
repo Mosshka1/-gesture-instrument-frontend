@@ -31,6 +31,22 @@ function describe(p: ApiPreset) {
   return [meta.name, scale && root ? `${root} ${scale.toLowerCase()}` : null].filter(Boolean).join(' · ');
 }
 
+// Короткий опис ефектів пресета: показуємо лише те, що відрізняється від стандарту
+function effectsSummary(p: ApiPreset) {
+  const s = p.settings || {};
+  const out: string[] = [];
+  const num = (v: unknown) => (typeof v === 'number' ? v : null);
+  const rv = num(s.reverb);
+  const ec = num(s.echo);
+  const tn = num(s.tone);
+  if (rv !== null) out.push(`реверб ${rv}%`);
+  if (ec !== null && ec > 0) out.push(`ехо ${ec}%`);
+  if (tn !== null && tn < 100) out.push(`яскравість ${tn}%`);
+  const waves: Record<string, string> = { sine: 'м’який', triangle: 'теплий', sawtooth: 'яскравий', square: 'різкий' };
+  if (typeof s.wave === 'string' && waves[s.wave]) out.push(`тембр: ${waves[s.wave]}`);
+  return out.length ? out.join(' · ') : '—';
+}
+
 function Presets() {
   const navigate = useNavigate();
   const [presets, setPresets] = useState<ApiPreset[]>([]);
@@ -206,7 +222,7 @@ function Presets() {
                 <tr>
                   <th>Пресет</th>
                   <th>Режим</th>
-                  <th>Чутливість</th>
+                  <th>Ефекти</th>
                   <th>Оновлено</th>
                   <th>Використано</th>
                   <th style={{ textAlign: 'right' }}>Дії</th>
@@ -215,12 +231,11 @@ function Presets() {
               <tbody>
                 {visible.map((p) => {
                   const meta = getModeMeta(normalizeModeId(p.soundType));
-                  const sens = p.settings?.sensitivity;
                   return (
                     <tr key={p.id}>
                       <td>
                         <div className="cell-preset" style={{ ['--c' as string]: meta.color }}>
-                          <div className="preset-swatch" />
+                          <div className="preset-swatch">{meta.icon}</div>
                           <div>
                             <div className="preset-name">
                               {p.favorite && <span className="star">★</span>}
@@ -235,7 +250,7 @@ function Presets() {
                           {meta.name}
                         </span>
                       </td>
-                      <td className="mono">{typeof sens === 'number' ? `${sens}%` : '—'}</td>
+                      <td className="fx-cell">{effectsSummary(p)}</td>
                       <td style={{ color: 'var(--muted)' }}>{timeAgo(p.updatedAt)}</td>
                       <td className="mono" style={{ color: 'var(--muted)' }}>
                         {p.usedCount}×

@@ -13,7 +13,7 @@ import { IconFullscreen, IconGear } from '../components/Icons';
 import { useHandTracking } from '../hooks/useHandTracking';
 import { HandTracker } from '../audio/features';
 import type { Calibration } from '../audio/features';
-import { DEFAULT_OPTS, createMode, emptyParams, getModeMeta, normalizeModeId } from '../audio/modes';
+import { DEFAULT_OPTS, MODES, createMode, emptyParams, getModeMeta, normalizeModeId } from '../audio/modes';
 import type { LiveParams, ModeId, ModeVoice, Opts, Spawn } from '../audio/modes';
 import { SCALES, createReverbImpulse } from '../audio/music';
 import type { ScaleId } from '../audio/music';
@@ -679,6 +679,26 @@ function Instrument() {
     setOpts((o) => ({ ...o, ...patch }));
     markModified();
   };
+
+  // гарячі клавіші: 1–9 — режими, R — запис
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(el.tagName) && e.key === ' ')) return;
+      if (el && (['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName) || el.isContentEditable)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      if (document.querySelector('.modal-backdrop, .sheet-backdrop')) return;
+      if (/^[1-9]$/.test(e.key)) {
+        const m = MODES[Number(e.key) - 1];
+        if (m) changeMode(m.id);
+      } else if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') {
+        if (isRecording) stopRecording();
+        else if (audioStarted) startRecording();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   const toggleFullscreen = () => {
     if (document.fullscreenElement) document.exitFullscreen();

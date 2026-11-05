@@ -4,6 +4,8 @@ import PageHeader from '../components/PageHeader';
 import { useHandTracking } from '../hooks/useHandTracking';
 import { isOpenPalm, isFist, isPeaceSign, isPinch, getTilt, getOpennessRatio } from '../utils/gestureChecks';
 import { loadCachedCalibration } from '../lib/calibration';
+import { getModeMeta } from '../audio/modes';
+import type { ModeId } from '../audio/modes';
 
 const HOLD_MS = 800;
 
@@ -11,15 +13,16 @@ type Step = {
   id: string;
   title: string;
   instruction: string;
+  why?: string; // навіщо цей жест у грі
   check: (landmarks: any[]) => boolean;
 };
 
 const STEPS: Step[] = [
-  { id: 'open', title: 'Розкрий долоню', instruction: 'Покажи камері повністю розкриту долоню з розведеними пальцями', check: isOpenPalm },
-  { id: 'fist', title: 'Стисни в кулак', instruction: 'Тепер стисни пальці в кулак', check: isFist },
+  { id: 'open', title: 'Розкрий долоню', instruction: 'Покажи камері повністю розкриту долоню з розведеними пальцями', why: 'Розкрита долоня зазвичай робить звук яскравішим і голоснішим, а ще вмикає хор, арпеджіо й бас.', check: isOpenPalm },
+  { id: 'fist', title: 'Стисни в кулак', instruction: 'Тепер стисни пальці в кулак', why: 'Кулак — це «пауза»: у Лід-синті, Арпеджіо й Вобл-басі звук затихає, а в Хорі змінюється голосна.', check: isFist },
   { id: 'pinch', title: 'Зроби щипок', instruction: 'З’єднай великий і вказівний палець разом', check: isPinch },
   { id: 'peace', title: 'Покажи жест «перемога»', instruction: 'Випрями вказівний і середній палець, решту зігни (як літера V)', check: isPeaceSign },
-  { id: 'tilt', title: 'Нахили долоню', instruction: 'Поверни зап’ясток так, щоб рука нахилилась убік', check: (lm) => Math.abs(getTilt(lm)) > 0.5 },
+  { id: 'tilt', title: 'Нахили долоню', instruction: 'Поверни зап’ясток так, щоб рука нахилилась убік', why: 'Нахил додає вібрато, тремоло або змінює обернення акорду — залежно від режиму.', check: (lm) => Math.abs(getTilt(lm)) > 0.5 },
 ];
 
 function Tutorial() {
@@ -65,6 +68,12 @@ function Tutorial() {
     navigate('/play');
   };
 
+  // з навчання одразу в гру з вибраним режимом
+  const startWith = (id: ModeId) => {
+    localStorage.setItem('selectedMode', id);
+    finish();
+  };
+
   return (
     <>
       <PageHeader crumb="Допомога / Навчання" title="Як грати">
@@ -97,9 +106,26 @@ function Tutorial() {
             {isFinished ? (
               <div className="card finish-box">
                 <h2>🎉 Чудово, базові жести освоєно!</h2>
-                <p>Тепер можна переходити до гри. Режими й налаштування чекають на сторінці «Грати».</p>
-                <button className="btn primary" style={{ padding: '14px 28px' }} onClick={finish}>
-                  Перейти до гри →
+                <p>З чого почнеш грати? Обери режим — його можна змінити будь-коли клавішами 1–9 або на сторінці «Грати».</p>
+                <div className="starter-grid">
+                  {([
+                    ['ambient', 'Найпростіший'],
+                    ['arp', 'Найефектніший'],
+                    ['choir', 'Найнезвичніший'],
+                  ] as [ModeId, string][]).map(([id, label]) => {
+                    const m = getModeMeta(id);
+                    return (
+                      <button key={id} className="starter" style={{ ['--c' as string]: m.color }} onClick={() => startWith(id)}>
+                        <span className="starter-badge">{label}</span>
+                        <span className="starter-icon">{m.icon}</span>
+                        <strong>{m.name}</strong>
+                        <em>{m.tagline}</em>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button className="btn" style={{ marginTop: 18 }} onClick={finish}>
+                  Просто перейти до гри →
                 </button>
               </div>
             ) : (
@@ -109,6 +135,12 @@ function Tutorial() {
                 <div className="progress">
                   <i style={{ width: `${progress * 100}%` }} />
                 </div>
+                {STEPS[currentStep].why && (
+                  <div className="guide-tip" style={{ marginTop: 16, ['--c' as string]: 'var(--accent)' }}>
+                    <span>💡</span>
+                    <p>{STEPS[currentStep].why}</p>
+                  </div>
+                )}
 
                 <div className="step-list" style={{ marginTop: 22, marginBottom: 0 }}>
                   {STEPS.map((step, i) => {

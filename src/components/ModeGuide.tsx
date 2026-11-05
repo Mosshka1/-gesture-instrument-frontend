@@ -15,7 +15,7 @@ function ModeGuide({ modeId, onChange, onAll }: { modeId: ModeId; onChange: (id:
       </div>
 
       <div className="mode-tiles">
-        {MODES.map((m) => (
+        {MODES.map((m, i) => (
           <button
             key={m.id}
             className={'mode-tile' + (m.id === modeId ? ' active' : '')}
@@ -24,11 +24,18 @@ function ModeGuide({ modeId, onChange, onAll }: { modeId: ModeId; onChange: (id:
             title={m.tagline}
             aria-pressed={m.id === modeId}
           >
+            <span className="mt-key" aria-hidden="true">
+              {i + 1}
+            </span>
             <span className="mt-icon">{m.icon}</span>
             <span className="mt-name">{m.name}</span>
           </button>
         ))}
       </div>
+
+      <p className="hint key-hint">
+        Гарячі клавіші: <kbd>1</kbd>–<kbd>9</kbd> — режими, <kbd>R</kbd> — запис
+      </p>
 
       <div className="guide" key={modeId}>
         <div className="guide-title">
