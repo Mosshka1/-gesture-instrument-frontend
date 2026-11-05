@@ -21,6 +21,7 @@ import { createPreset, getErrorMessage, getSounds, markPresetUsed, updatePreset,
 import type { ApiPreset, ApiSound } from '../api';
 import { fetchCalibration, loadCachedCalibration, persistCalibration } from '../lib/calibration';
 import { formatBytes, formatDuration } from '../lib/format';
+import { confetti } from '../utils/confetti';
 import Glyph from '../components/Glyph';
 
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; color: string };
@@ -63,6 +64,11 @@ function Instrument() {
   const [recName, setRecName] = useState('');
   const [recSaving, setRecSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(''), 7000);
+    return () => clearTimeout(t);
+  }, [notice]);
   const [looper, setLooper] = useState<Looper | null>(null);
   const [looperVersion, setLooperVersion] = useState(0);
 
@@ -568,6 +574,7 @@ function Instrument() {
       await uploadRecording(recName.trim() || 'Без назви', pendingRec.blob, pendingRec.mode, pendingRec.duration);
       setPendingRec(null);
       setNotice('Запис збережено! Він з’явиться у розділі «Записи».');
+      confetti();
     } catch (err) {
       setNotice(getErrorMessage(err, 'Не вдалось зберегти запис'));
     } finally {
@@ -628,6 +635,7 @@ function Instrument() {
       setSessionPreset({ id: preset.id, name: preset.name });
       setShowSave(false);
       setNotice(`Пресет «${preset.name}» збережено`);
+      confetti();
     } catch (err) {
       setSaveError(getErrorMessage(err));
     } finally {
@@ -737,9 +745,9 @@ function Instrument() {
 
       <div className="page-body">
         {notice && (
-          <div className="ok-box" style={{ marginTop: 0, marginBottom: 18, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <div className="toast" role="status">
             <span>{notice}</span>
-            <button className="icon-btn" style={{ width: 26, height: 26 }} onClick={() => setNotice('')}>
+            <button className="icon-btn" onClick={() => setNotice('')} aria-label="Закрити">
               <Glyph name="close" />
             </button>
           </div>

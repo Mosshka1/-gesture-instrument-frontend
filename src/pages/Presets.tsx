@@ -11,6 +11,7 @@ import type { ModeId } from '../audio/modes';
 import { NOTE_NAMES, SCALES } from '../audio/music';
 import type { ScaleId } from '../audio/music';
 import { timeAgo } from '../lib/format';
+import { confetti } from '../utils/confetti';
 import EmptyState from '../components/EmptyState';
 import Glyph from '../components/Glyph';
 
@@ -99,6 +100,7 @@ function Presets() {
   const toggleFavorite = async (p: ApiPreset) => {
     try {
       const updated = await updatePreset(p.id, { favorite: !p.favorite });
+      if (updated.favorite) confetti(undefined, undefined, 24);
       setPresets((list) => list.map((x) => (x.id === p.id ? updated : x)));
     } catch (err) {
       setError(getErrorMessage(err));

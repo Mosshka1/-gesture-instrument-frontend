@@ -1886,3 +1886,94 @@ select option {
     animation: none;
   }
 }
+
+/* ---------- Тости, наліпки, жива дрібниця ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 12px 14px 12px 18px;
+  font-weight: 700;
+  color: var(--fixed);
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 5px 5px 0 var(--sh);
+  transform: translateX(-50%) rotate(-0.8deg);
+  animation: toast-in 0.45s var(--ease) both;
+}
+.toast .icon-btn {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  color: var(--fixed);
+  background: #fff;
+  border-color: var(--fixed);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 40px) rotate(4deg) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) rotate(-0.8deg);
+  }
+}
+@media (max-width: 820px), (max-height: 520px) {
+  .toast {
+    bottom: 92px;
+  }
+}
+
+.mode-card,
+.rec-item,
+.stats > * {
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), background 0.2s;
+}
+.mode-card:hover {
+  transform: translate(-3px, -3px) rotate(-0.5deg);
+  box-shadow: 8px 8px 0 var(--sh);
+}
+.stats > *:hover {
+  transform: translate(-2px, -2px) rotate(0deg);
+  box-shadow: 5px 5px 0 var(--sh);
+}
+.rec-item:hover {
+  transform: translate(-3px, -3px);
+}
+.table tr {
+  transition: background 0.15s;
+}
+.wordmark:hover .wm-front {
+  animation: wiggle 0.5s var(--ease);
+}
+@keyframes wiggle {
+  30% { transform: rotate(-3deg); }
+  60% { transform: rotate(2deg); }
+}
+.avatar-lg,
+.es-disc,
+.logo-mark {
+  transition: transform 0.3s var(--ease);
+}
+.avatar-lg:hover,
+.logo-mark:hover {
+  transform: rotate(-8deg) scale(1.05);
+}
+/* прокрутка в стилі друку */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink) transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
