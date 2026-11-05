@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import Glyph from './Glyph';
 
 // Нижня шторка для телефонів: не закриває камеру повністю й гортається
@@ -10,7 +11,8 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  return (
+  // портал в корінь оболонки: інакше анімація сторінки створює шар, і модалка опиняється під шапкою
+  return createPortal(
     <div className="sheet-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="sheet-handle" />
@@ -22,7 +24,8 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.querySelector('.app-shell') ?? document.body
   );
 }
 

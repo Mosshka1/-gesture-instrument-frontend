@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 type Props = {
   title: string;
@@ -18,7 +19,8 @@ function Modal({ title, subtitle, onClose, children, actions }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  return (
+  // портал в корінь оболонки: інакше анімація сторінки створює шар, і модалка опиняється під шапкою
+  return createPortal(
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" role="dialog" aria-modal="true">
         <h2>{title}</h2>
@@ -26,7 +28,8 @@ function Modal({ title, subtitle, onClose, children, actions }: Props) {
         <div>{children}</div>
         {actions && <div className="modal-actions">{actions}</div>}
       </div>
-    </div>
+    </div>,
+    document.querySelector('.app-shell') ?? document.body
   );
 }
 

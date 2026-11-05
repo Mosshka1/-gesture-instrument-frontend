@@ -1977,3 +1977,28 @@ select option {
     animation: none;
   }
 }
+
+/* ---------- Шари: модалки й шторки над усім, у тому числі над шапкою та меню ---------- */
+.main {
+  position: static;
+  z-index: auto;
+}
+.modal-backdrop,
+.sheet-backdrop {
+  z-index: 100;
+}
+.sheet {
+  z-index: 110;
+}
+
+.btn.danger,
+.btn.dng {
+  color: #fff;
+  background: var(--red);
+  border-color: var(--ink);
+}
+.btn.danger:hover:not(:disabled),
+.btn.dng:hover:not(:disabled) {
+  color: #fff;
+  background: color-mix(in srgb, var(--red) 88%, #000);
+}
