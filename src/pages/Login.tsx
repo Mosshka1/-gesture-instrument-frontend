@@ -55,7 +55,7 @@ function Login() {
           {slow && <div className="ok-box">Сервер прокидається після простою — це може тривати до хвилини. Зачекай, будь ласка…</div>}
 
           <button type="submit" className="btn primary block" style={{ marginTop: 22, padding: 15 }} disabled={loading}>
-            {loading ? 'Входимо…' : 'Увійти →'}
+            {loading ? 'Входимо…' : 'Увійти'}
           </button>
 
           <div className="divider">або продовжити через</div>

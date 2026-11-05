@@ -10,7 +10,7 @@ function ModeGuide({ modeId, onChange, onAll }: { modeId: ModeId; onChange: (id:
       <div className="panel-head">
         <h3>Режим гри</h3>
         <button className="link-btn mono" onClick={onAll}>
-          Усі режими →
+          Усі режими
         </button>
       </div>
 

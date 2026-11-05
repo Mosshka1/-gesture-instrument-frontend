@@ -26,9 +26,9 @@ function Modes() {
 
   return (
     <>
-      <PageHeader crumb="Інструмент / Режими" title="Вибери режим інструмента">
+      <PageHeader crumb="Дев’ять способів грати руками" title="Вибери режим інструмента">
         <button className="btn primary" onClick={() => navigate('/play')}>
-          До сесії →
+          До сесії
         </button>
       </PageHeader>
 

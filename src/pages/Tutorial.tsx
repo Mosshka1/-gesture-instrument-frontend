@@ -76,7 +76,7 @@ function Tutorial() {
 
   return (
     <>
-      <PageHeader crumb="Допомога / Навчання" title="Як грати">
+      <PageHeader crumb="П’ять хвилин до першої мелодії" title="Як грати">
         {!isFinished && (
           <button className="btn" onClick={finish}>
             Пропустити навчання
@@ -125,7 +125,7 @@ function Tutorial() {
                   })}
                 </div>
                 <button className="btn" style={{ marginTop: 18 }} onClick={finish}>
-                  Просто перейти до гри →
+                  Просто перейти до гри
                 </button>
               </div>
             ) : (

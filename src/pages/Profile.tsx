@@ -85,7 +85,7 @@ function Profile() {
 
   return (
     <>
-      <PageHeader crumb="Акаунт" title="Особистий кабінет">
+      <PageHeader crumb="Дані акаунта й калібрування камери" title="Особистий кабінет">
         <button className="btn danger" onClick={logout}>
           Вийти
         </button>

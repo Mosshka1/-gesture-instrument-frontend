@@ -2,49 +2,48 @@ import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { IconHelp, IconModes, IconPlay, IconPresets, IconRecordings, IconSounds } from './Icons';
 import { getStoredUser, initials } from '../lib/format';
 
+const LINKS = [
+  { to: '/play', k: 'play', label: 'Грати', title: 'Грати', Icon: IconPlay },
+  { to: '/modes', k: 'modes', label: 'Режими', title: 'Режими інструмента', Icon: IconModes },
+  { to: '/presets', k: 'presets', label: 'Пресети', title: 'Мої пресети', Icon: IconPresets },
+  { to: '/recordings', k: 'recordings', label: 'Записи', title: 'Мої записи', Icon: IconRecordings },
+  { to: '/sounds', k: 'sounds', label: 'Звуки', title: 'Власні звуки', Icon: IconSounds },
+];
+
 function Layout() {
   const user = getStoredUser();
   const { pathname } = useLocation();
-  // кожен розділ має свій акцентний колір (див. [data-section] в index.css)
+  // кожен розділ друкується своєю фарбою (див. [data-section] в riso.css)
   const section = pathname.split('/')[1] || 'play';
-  const cls = ({ isActive }: { isActive: boolean }) => 'side-link' + (isActive ? ' active' : '');
+  const cls = ({ isActive }: { isActive: boolean }) => 'nav-link' + (isActive ? ' active' : '');
 
   return (
     <div className="app-shell" data-section={section}>
-      <nav className="sidebar">
-        <div className="logo-mark" title="GestureSound" />
-
-        <NavLink to="/play" className={cls} title="Грати">
-          <IconPlay />
-          Грати
-        </NavLink>
-        <NavLink to="/modes" className={cls} title="Режими інструмента">
-          <IconModes />
-          Режими
-        </NavLink>
-        <NavLink to="/presets" className={cls} title="Мої пресети">
-          <IconPresets />
-          Пресети
-        </NavLink>
-        <NavLink to="/recordings" className={cls} title="Мої записи">
-          <IconRecordings />
-          Записи
-        </NavLink>
-        <NavLink to="/sounds" className={cls} title="Власні звуки">
-          <IconSounds />
-          Звуки
+      <header className="masthead">
+        <NavLink to="/play" className="wordmark" title="GestureSound">
+          <span className="wm-back" aria-hidden="true">Gesture<br />Sound</span>
+          <span className="wm-front">Gesture<br />Sound</span>
         </NavLink>
 
-        <div className="side-spacer" />
+        <nav className="nav-strip" aria-label="Розділи">
+          {LINKS.map(({ to, k, label, title, Icon }) => (
+            <NavLink key={to} to={to} className={cls} title={title} data-k={k}>
+              <Icon />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
 
-        <NavLink to="/tutorial" className={(s) => cls(s) + ' side-help'} title="Як грати">
-          <IconHelp />
-          Навчання
-        </NavLink>
-        <NavLink to="/profile" title="Профіль" className="side-profile">
-          {({ isActive }) => <div className={'avatar-sm' + (isActive ? ' active' : '')}>{initials(user?.fullName)}</div>}
-        </NavLink>
-      </nav>
+        <div className="masthead-end">
+          <NavLink to="/tutorial" className={cls} title="Як грати" data-k="tutorial">
+            <IconHelp />
+            <span>Навчання</span>
+          </NavLink>
+          <NavLink to="/profile" title="Профіль" className="side-profile">
+            {({ isActive }) => <div className={'avatar-sm' + (isActive ? ' active' : '')}>{initials(user?.fullName)}</div>}
+          </NavLink>
+        </div>
+      </header>
 
       <main className="main">
         <div className="page-transition" key={pathname}>

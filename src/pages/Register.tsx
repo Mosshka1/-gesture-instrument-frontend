@@ -59,7 +59,7 @@ function Register() {
           {slow && <div className="ok-box">Сервер прокидається після простою — це може тривати до хвилини. Зачекай, будь ласка…</div>}
 
           <button type="submit" className="btn primary block" style={{ marginTop: 22, padding: 15 }} disabled={loading}>
-            {loading ? 'Створюємо…' : 'Зареєструватись →'}
+            {loading ? 'Створюємо…' : 'Створити акаунт'}
           </button>
 
           <div className="divider">або продовжити через</div>

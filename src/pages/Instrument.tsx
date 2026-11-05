@@ -725,7 +725,7 @@ function Instrument() {
 
   return (
     <>
-      <PageHeader crumb="Інструмент / Жива сесія" title="Грати">
+      <PageHeader crumb="Камера, рука, звук" title="Грати">
         <span className="pill keep">
           <span className={'dot' + (status === 'ready' ? '' : status === 'error' ? ' off' : ' wait')} />
           {cameraText}

@@ -151,7 +151,7 @@ function Recordings() {
 
   return (
     <>
-      <PageHeader crumb="Бібліотека / Записи" title="Мої записи">
+      <PageHeader crumb="Усе, що ти зіграла й зберегла" title="Мої записи">
         <span className="pill">
           <b>{items.length}</b> записів · <b>{formatDuration(stats.total)}</b> разом
         </span>

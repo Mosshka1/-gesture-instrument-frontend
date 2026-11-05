@@ -17,32 +17,24 @@ function AuthHero() {
   return (
     <div className="hero-card">
       <svg className="hand" viewBox="0 0 600 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="4" result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <g transform="translate(70 40) scale(1.05)" filter="url(#glow)">
+        
+        <g transform="translate(70 40) scale(1.05)">
           {lines.map(([a, b], i) => (
-            <line key={i} x1={joints[a][0]} y1={joints[a][1]} x2={joints[b][0]} y2={joints[b][1]} stroke="#3de8c8" strokeWidth="3.5" strokeLinecap="round" pathLength={1} className="bone" style={{ animationDelay: `${i * 0.05}s` }} />
+            <line key={i} x1={joints[a][0]} y1={joints[a][1]} x2={joints[b][0]} y2={joints[b][1]} stroke="#14173D" strokeWidth="7" strokeLinecap="round" pathLength={1} className="bone" style={{ animationDelay: `${i * 0.05}s` }} />
           ))}
           {joints.map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r={tips.includes(i) ? 8 : 5.5} fill={tips.includes(i) ? '#c6f23a' : '#fff'} className={tips.includes(i) ? 'joint tip' : 'joint'} style={{ animationDelay: `${0.6 + i * 0.04}s` }} />
+            <circle key={i} cx={x} cy={y} r={tips.includes(i) ? 13 : 8} fill={tips.includes(i) ? '#FFD60A' : '#E9ECF2'} stroke="#14173D" strokeWidth="4" className={tips.includes(i) ? 'joint tip' : 'joint'} style={{ animationDelay: `${0.6 + i * 0.04}s` }} />
           ))}
         </g>
         {[0, 1, 2, 3].map((i) => (
-          <circle key={i} cx={90 + i * 150} cy={560 + (i % 2) * 20} r={2 + i} fill="#8b6cff" opacity={0.5} />
+          <circle key={i} cx={90 + i * 150} cy={560 + (i % 2) * 20} r={2 + i} fill="#14173D" />
         ))}
       </svg>
 
       <div className="hero-chip">
-        <span className="dot" /> РЕАЛЬНИЙ ЧАС · ТРЕКІНГ 30+ FPS
+        <span className="dot" /> Камера бачить 21 точку руки
       </div>
-      <div className="hero-chip second">ТОН: A3 · ГУЧН.: 72%</div>
+      <div className="hero-chip second">Висота A3, гучність 72%</div>
 
       <div className="hero-text">
         <div className="kicker">Твій інструмент, налаштований під тебе</div>

@@ -298,7 +298,7 @@ function Sounds() {
 
   return (
     <>
-      <PageHeader crumb="Бібліотека / Звуки" title="Власні звуки">
+      <PageHeader crumb="Власні семпли для інструмента й фону" title="Власні звуки">
         <span className="pill">
           <b>{sounds.length}</b> файлів
         </span>

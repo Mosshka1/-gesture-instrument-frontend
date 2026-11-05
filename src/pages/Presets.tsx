@@ -172,7 +172,7 @@ function Presets() {
 
   return (
     <>
-      <PageHeader crumb="Бібліотека / Пресети" title="Мої пресети">
+      <PageHeader crumb="Налаштування, які вмієш викликати одним кліком" title="Мої пресети">
         <span className="pill">
           <b>{presets.length}</b> збережено
         </span>
