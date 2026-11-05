@@ -6,6 +6,7 @@ import { isOpenPalm, isFist, isPeaceSign, isPinch, getTilt, getOpennessRatio } f
 import { loadCachedCalibration } from '../lib/calibration';
 import { getModeMeta } from '../audio/modes';
 import type { ModeId } from '../audio/modes';
+import Glyph from '../components/Glyph';
 
 const HOLD_MS = 800;
 
@@ -105,7 +106,7 @@ function Tutorial() {
           <div>
             {isFinished ? (
               <div className="card finish-box">
-                <h2>🎉 Чудово, базові жести освоєно!</h2>
+                <h2>Чудово, базові жести освоєно!</h2>
                 <p>З чого почнеш грати? Обери режим — його можна змінити будь-коли клавішами 1–9 або на сторінці «Грати».</p>
                 <div className="starter-grid">
                   {([
@@ -117,7 +118,7 @@ function Tutorial() {
                     return (
                       <button key={id} className="starter" style={{ ['--c' as string]: m.color }} onClick={() => startWith(id)}>
                         <span className="starter-badge">{label}</span>
-                        <span className="starter-icon">{m.icon}</span>
+                        <span className="starter-icon"><Glyph name={m.icon} /></span>
                         <strong>{m.name}</strong>
                         <em>{m.tagline}</em>
                       </button>
@@ -137,7 +138,7 @@ function Tutorial() {
                 </div>
                 {STEPS[currentStep].why && (
                   <div className="guide-tip" style={{ marginTop: 16, ['--c' as string]: 'var(--accent)' }}>
-                    <span>💡</span>
+                    <span><Glyph name="bulb" /></span>
                     <p>{STEPS[currentStep].why}</p>
                   </div>
                 )}
@@ -147,7 +148,7 @@ function Tutorial() {
                     const done = completed.includes(step.id);
                     return (
                       <div key={step.id} className={'step-item' + (done ? ' done' : i === currentStep ? ' cur' : '')}>
-                        <span className="num">{done ? '✓' : i + 1}</span>
+                        <span className="num">{done ? <Glyph name="check" /> : i + 1}</span>
                         {step.title}
                       </div>
                     );

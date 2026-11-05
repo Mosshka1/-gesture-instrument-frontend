@@ -21,6 +21,7 @@ import { createPreset, getErrorMessage, getSounds, markPresetUsed, updatePreset,
 import type { ApiPreset, ApiSound } from '../api';
 import { fetchCalibration, loadCachedCalibration, persistCalibration } from '../lib/calibration';
 import { formatBytes, formatDuration } from '../lib/format';
+import Glyph from '../components/Glyph';
 
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; color: string };
 
@@ -423,11 +424,7 @@ function Instrument() {
 
       const gap = 4;
       const bw = (w - gap * (bars - 1)) / bars;
-      const grad = ctx.createLinearGradient(0, 0, w, 0);
-      grad.addColorStop(0, '#3de8c8');
-      grad.addColorStop(0.55, '#8b6cff');
-      grad.addColorStop(1, '#ff4fc3');
-      ctx.fillStyle = grad;
+      ctx.fillStyle = '#ffd60a';
 
       for (let i = 0; i < bars; i++) {
         const idx = Math.floor((i / bars) * Math.min(data.length, 56));
@@ -711,10 +708,10 @@ function Instrument() {
   const backgroundSounds = useMemo(() => sounds.filter((s) => s.type === 'background'), [sounds]);
 
   const params: [string, string, number, string][] = [
-    [meta.paramLabels[0], live.freq || modeId === 'chord' || modeId === 'percussive' ? live.pitchLabel : '—', live.pitch, '#3de8c8'],
-    [meta.paramLabels[1], `${Math.round(Math.min(live.volume, 1) * 100)}%`, Math.min(live.volume, 1), '#8b6cff'],
-    [meta.paramLabels[2], `${Math.round(live.timbre * 100)}%`, live.timbre, '#ffb347'],
-    [meta.paramLabels[3], `${Math.round(live.fx * 100)}%`, live.fx, '#ff4fc3'],
+    [meta.paramLabels[0], live.freq || modeId === 'chord' || modeId === 'percussive' ? live.pitchLabel : '—', live.pitch, '#ff4f9a'],
+    [meta.paramLabels[1], `${Math.round(Math.min(live.volume, 1) * 100)}%`, Math.min(live.volume, 1), '#ffd60a'],
+    [meta.paramLabels[2], `${Math.round(live.timbre * 100)}%`, live.timbre, '#ff6a1f'],
+    [meta.paramLabels[3], `${Math.round(live.fx * 100)}%`, live.fx, '#14b86a'],
   ];
   if (live.freq > 0 && modeId !== 'chord' && modeId !== 'percussive') {
     params[0][1] = `${live.pitchLabel} · ${Math.round(live.freq)} Гц`;
@@ -743,7 +740,7 @@ function Instrument() {
           <div className="ok-box" style={{ marginTop: 0, marginBottom: 18, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
             <span>{notice}</span>
             <button className="icon-btn" style={{ width: 26, height: 26 }} onClick={() => setNotice('')}>
-              ✕
+              <Glyph name="close" />
             </button>
           </div>
         )}
@@ -785,7 +782,7 @@ function Instrument() {
                   <h3>Готова грати?</h3>
                   <p>Браузер дозволяє звук лише після кліку. Натисни кнопку — і рухай рукою перед камерою. На iPhone вимкни беззвучний режим (перемикач збоку), інакше звуку не буде.</p>
                   <button className="btn primary" style={{ padding: '14px 28px', fontSize: 16 }} onClick={startAudio}>
-                    ▶ Увімкнути звук
+                    <Glyph name="play" /> Увімкнути звук
                   </button>
                 </div>
               </div>
@@ -806,15 +803,15 @@ function Instrument() {
             {introFor && audioStarted && !calibrating && (
               <div className="mode-intro" key={introFor} style={{ ['--c' as string]: getModeMeta(introFor).color }}>
                 <button className="mi-close" onClick={() => setIntroFor(null)} aria-label="Сховати підказку">
-                  ✕
+                  <Glyph name="close" />
                 </button>
                 <div className="mi-title">
-                  <i>{getModeMeta(introFor).icon}</i> {getModeMeta(introFor).name}
+                  <i><Glyph name={getModeMeta(introFor).icon} /></i> {getModeMeta(introFor).name}
                 </div>
                 <ul>
                   {getModeMeta(introFor).howTo.slice(0, 3).map((h, i) => (
                     <li key={i}>
-                      <span>{h.icon}</span>
+                      <span><Glyph name={h.icon} /></span>
                       <span>
                         <b>{h.gesture}</b> — {h.effect}
                       </span>
@@ -834,7 +831,7 @@ function Instrument() {
 
             <div className="stage-bar">
               <div className="mode-chip">
-                <div className="swatch" style={{ background: `linear-gradient(135deg, ${meta.color}, #8b6cff)` }} />
+                <div className="swatch" style={{ background: meta.color }} />
                 <div>
                   <small>Активний режим</small>
                   <strong>{meta.name}</strong>
@@ -857,11 +854,11 @@ function Instrument() {
               )}
               {isRecording ? (
                 <button className="btn rec recording rec-btn" onClick={stopRecording}>
-                  ■ Стоп
+                  <Glyph name="stop" /> Стоп
                 </button>
               ) : (
                 <button className="btn rec rec-btn" onClick={startRecording} disabled={!audioStarted}>
-                  ● Записати
+                  <Glyph name="rec" /> Записати
                 </button>
               )}
             </div>
@@ -893,7 +890,7 @@ function Instrument() {
             <div className="panel">
               <div className="panel-head">
                 <h3>Хвиля на виході</h3>
-                <span className="mini-tag" style={{ ['--c' as string]: '#8b6cff' }}>
+                <span className="mini-tag" style={{ ['--c' as string]: '#ffd60a' }}>
                   {audioCtxRef.current ? `${(audioCtxRef.current.sampleRate / 1000).toFixed(1)} кГц` : 'звук вимкнено'}
                 </span>
               </div>
@@ -933,10 +930,10 @@ function Instrument() {
                 disabled={!audioStarted}
                 onClick={() => { setPresetName(''); setSaveError(''); setShowSave(true); }}
               >
-                ⬇ Зберегти пресет
+                <Glyph name="save" /> Зберегти пресет
               </button>
               <button className="btn" style={{ padding: 15 }} onClick={() => setCalibrating(true)} disabled={calibrating}>
-                ≡ Калібрувати
+                <Glyph name="sliders" /> Калібрувати
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { MODES, normalizeModeId } from '../audio/modes';
 import type { ModeCategory, ModeId } from '../audio/modes';
+import Glyph from '../components/Glyph';
 
 const FILTERS: { id: 'all' | ModeCategory; label: string }[] = [
   { id: 'all', label: 'Усі' },
@@ -32,6 +33,17 @@ function Modes() {
         </button>
       </PageHeader>
 
+      <div className="ribbon" aria-hidden="true">
+        <div className="ribbon-track">
+          {[0, 1].map((k) => (
+            <span key={k}>
+              {MODES.map((m) => (
+                <b key={m.id} style={{ ['--c' as string]: m.color }}>{m.name}</b>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
       <div className="page-body">
         <div className="modes-intro">
           <p>
@@ -54,17 +66,17 @@ function Modes() {
               <div key={m.id} className={'mode-card' + (isSel ? ' selected' : '')} style={{ ['--c' as string]: m.color }}>
                 {isSel && (
                   <span className="mini-tag selected-badge" style={{ ['--c' as string]: m.color }}>
-                    ● вибрано
+                    вибрано
                   </span>
                 )}
-                <div className="mode-icon">{m.icon}</div>
+                <div className="mode-icon"><Glyph name={m.icon} /></div>
                 <h3>{m.name}</h3>
                 <p className="desc">{m.desc}</p>
                 <p className="tagline">{m.tagline}</p>
                 <ol className="howto compact">
                   {m.howTo.map((h, i) => (
                     <li key={i}>
-                      <span className="ht-icon">{h.icon}</span>
+                      <span className="ht-icon"><Glyph name={h.icon} /></span>
                       <span className="ht-text">
                         <b>{h.gesture}</b>
                         <em>{h.effect}</em>
@@ -73,12 +85,12 @@ function Modes() {
                   ))}
                 </ol>
                 <div className="guide-tip">
-                  <span>💡</span>
+                  <span><Glyph name="bulb" /></span>
                   <p>{m.tip}</p>
                 </div>
                 {isSel ? (
                   <button className="btn primary block" onClick={() => navigate('/play')}>
-                    ✓ Активний режим — грати
+                    Активний режим, грати
                   </button>
                 ) : (
                   <button className="btn block" onClick={() => choose(m.id)}>

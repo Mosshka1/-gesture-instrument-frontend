@@ -3,6 +3,7 @@ import type { ScaleId } from '../audio/music';
 import { DEFAULT_OPTS } from '../audio/modes';
 import type { Opts, WaveChoice } from '../audio/modes';
 import type { ApiSound } from '../api';
+import Glyph from './Glyph';
 
 const WAVES: { id: WaveChoice; label: string; hint: string }[] = [
   { id: 'auto', label: 'Авто', hint: 'Кожен режим звучить так, як задумано' },
@@ -14,10 +15,10 @@ const WAVES: { id: WaveChoice; label: string; hint: string }[] = [
 
 type SliderKey = 'reverb' | 'echo' | 'tone' | 'volume';
 const SLIDERS: { key: SliderKey; icon: string; label: string; low: string; high: string }[] = [
-  { key: 'reverb', icon: '🏛', label: 'Реверб', low: 'сухо', high: 'собор' },
-  { key: 'echo', icon: '〰', label: 'Ехо', low: 'немає', high: 'довга луна' },
-  { key: 'tone', icon: '☀', label: 'Яскравість', low: 'глухо', high: 'дзвінко' },
-  { key: 'volume', icon: '🔊', label: 'Гучність', low: 'тихо', high: 'гучно' },
+  { key: 'reverb', icon: 'reverb', label: 'Реверб', low: 'сухо', high: 'собор' },
+  { key: 'echo', icon: 'echo', label: 'Ехо', low: 'немає', high: 'довга луна' },
+  { key: 'tone', icon: 'sun', label: 'Яскравість', low: 'глухо', high: 'дзвінко' },
+  { key: 'volume', icon: 'volume', label: 'Гучність', low: 'тихо', high: 'гучно' },
 ];
 
 type Props = {
@@ -77,7 +78,7 @@ function SoundPanel({ opts, onChange, soundId, backgroundId, onSound, onBackgrou
           <div className="fx-row" key={s.key}>
             <div className="fx-head">
               <span>
-                <i>{s.icon}</i> {s.label}
+                <i><Glyph name={s.icon} /></i> {s.label}
               </span>
               <b>{opts[s.key]}%</b>
             </div>
@@ -122,7 +123,7 @@ function SoundPanel({ opts, onChange, soundId, backgroundId, onSound, onBackgrou
       </div>
 
       <button className="btn block" onClick={() => onChange({ ...DEFAULT_OPTS, scale: opts.scale, root: opts.root })} disabled={!changed}>
-        ↺ Скинути ефекти й характер
+        <Glyph name="reset" /> Скинути ефекти й характер
       </button>
     </div>
   );

@@ -116,7 +116,7 @@ function CalibrationWizard({ getLandmarks, onCancel, onDone }: Props) {
 
       {finished ? (
         <>
-          <h4>✓ Калібрування завершено</h4>
+          <h4>Калібрування завершено</h4>
           <p>Налаштування збережено в акаунті й працюватимуть у всіх режимах.</p>
           <div className="modal-actions" style={{ marginTop: 14 }}>
             <button className="btn primary sm" onClick={onCancel}>

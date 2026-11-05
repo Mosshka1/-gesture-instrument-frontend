@@ -6,6 +6,7 @@ import type { ApiUser } from '../api';
 import type { Calibration } from '../audio/features';
 import { fetchCalibration, loadCachedCalibration, persistCalibration } from '../lib/calibration';
 import { initials } from '../lib/format';
+import Glyph from '../components/Glyph';
 
 function Profile() {
   const navigate = useNavigate();
@@ -120,14 +121,14 @@ function Profile() {
             <div className="card" style={{ padding: 14 }}>
               <div className="menu">
                 <a className="on" href="#account" onClick={(e) => { e.preventDefault(); document.getElementById('account')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                  ◇ Дані акаунта
+                  <Glyph name="user" /> Дані акаунта
                 </a>
                 <a href="#tracking" onClick={(e) => { e.preventDefault(); document.getElementById('tracking')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                  ≡ Трекінг і калібрування
+                  <Glyph name="sliders" /> Трекінг і калібрування
                 </a>
-                <Link to="/presets">▤ Збережені пресети</Link>
-                <Link to="/recordings">● Записи</Link>
-                <Link to="/sounds">♪ Власні звуки</Link>
+                <Link to="/presets"><Glyph name="grid" /> Збережені пресети</Link>
+                <Link to="/recordings"><Glyph name="rec" /> Записи</Link>
+                <Link to="/sounds"><Glyph name="note" /> Власні звуки</Link>
                 <Link to="/tutorial">? Як грати (навчання)</Link>
               </div>
             </div>
@@ -201,22 +202,22 @@ function Profile() {
               <div className="crumb" style={{ margin: '28px 0 6px' }}>Калібрування під твою руку та кімнату</div>
               <div className="calib-tiles">
                 <div className="tile">
-                  <div className="ico">✋</div>
+                  <div className="ico"><Glyph name="spread" /></div>
                   <strong>Розмір руки</strong>
                   <small>{handSizeText}</small>
                 </div>
                 <div className="tile">
-                  <div className="ico">☀</div>
+                  <div className="ico"><Glyph name="sun" /></div>
                   <strong>Жести</strong>
                   <small>{gestureText}</small>
                 </div>
                 <div className="tile">
-                  <div className="ico">▣</div>
+                  <div className="ico"><Glyph name="camera" /></div>
                   <strong>Діапазон відстані</strong>
                   <small>{rangeText}</small>
                 </div>
                 <button className="tile action" onClick={() => navigate('/play?calibrate=1')}>
-                  <div className="ico">↻</div>
+                  <div className="ico"><Glyph name="reset" /></div>
                   <strong>Відкалібрувати</strong>
                   <small style={{ color: 'var(--dim)' }}>Займе ~20 секунд</small>
                 </button>

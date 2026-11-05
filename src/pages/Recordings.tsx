@@ -8,6 +8,7 @@ import { deleteRecording, getErrorMessage, getRecordings, renameRecording, uploa
 import type { ApiRecording } from '../api';
 import { MODES, getModeMeta } from '../audio/modes';
 import { formatBytes, formatDuration } from '../lib/format';
+import Glyph from '../components/Glyph';
 
 const BARS = 40;
 
@@ -156,7 +157,7 @@ function Recordings() {
           <b>{items.length}</b> записів · <b>{formatDuration(stats.total)}</b> разом
         </span>
         <button className="btn primary" onClick={() => navigate('/play')}>
-          ▶ Нова сесія
+          <Glyph name="play" /> Нова сесія
         </button>
       </PageHeader>
 
@@ -189,7 +190,7 @@ function Recordings() {
             <h3>Записів ще немає</h3>
             <p>На сторінці «Грати» натисни «Записати», пограй і збережи мелодію — вона з’явиться тут.</p>
             <button className="btn primary" style={{ marginTop: 18 }} onClick={() => navigate('/play')}>
-              ● Записати першу мелодію
+              <Glyph name="rec" /> Записати першу мелодію
             </button>
           </div>
         ) : (
@@ -201,7 +202,7 @@ function Recordings() {
               return (
                 <div key={rec.id} className={'rec-item' + (isPlaying ? ' playing' : '')}>
                   <button className={'play-btn' + (isPlaying ? ' on' : '')} onClick={() => togglePlay(rec)}>
-                    {isPlaying ? '❚❚' : '▶'}
+                    <Glyph name={isPlaying ? 'pause' : 'play'} />
                   </button>
 
                   <div style={{ minWidth: 0 }}>

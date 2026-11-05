@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Looper } from '../audio/looper';
 import { MAX_LAYERS } from '../audio/looper';
+import Glyph from './Glyph';
 
 function LooperPanel({ looper, modeName, version }: { looper: Looper | null; modeName: string; version: number }) {
   const [pos, setPos] = useState(0);
@@ -50,10 +51,10 @@ function LooperPanel({ looper, modeName, version }: { looper: Looper | null; mod
 
       <div className="loop-actions">
         {phase === 'idle' && (
-          <button className="btn primary block" onClick={() => looper.startBase(layerName)}>● Записати основу</button>
+          <button className="btn primary block" onClick={() => looper.startBase(layerName)}><Glyph name="rec" /> Записати основу</button>
         )}
         {(phase === 'countin' || phase === 'recBase') && (
-          <button className="btn rec block" onClick={() => looper.stopBase()}>■ Стоп</button>
+          <button className="btn rec block" onClick={() => looper.stopBase()}><Glyph name="stop" /> Стоп</button>
         )}
         {phase === 'playing' && (
           <>
@@ -71,10 +72,10 @@ function LooperPanel({ looper, modeName, version }: { looper: Looper | null; mod
       {layerList.map((l) => (
         <div className="sound-item" key={l.id}>
           <button className={'icon-btn' + (l.muted ? '' : ' active')} onClick={() => looper.toggleMute(l.id)} title={l.muted ? 'Увімкнути' : 'Вимкнути'}>
-            {l.muted ? '🔇' : '🔊'}
+            <Glyph name={l.muted ? 'mute' : 'volume'} />
           </button>
           <span className="nm" style={{ opacity: l.muted ? 0.45 : 1 }}>{l.name}</span>
-          <button className="icon-btn danger" onClick={() => looper.removeLayer(l.id)} title="Видалити шар">✕</button>
+          <button className="icon-btn danger" onClick={() => looper.removeLayer(l.id)} title="Видалити шар"><Glyph name="close" /></button>
         </div>
       ))}
     </div>

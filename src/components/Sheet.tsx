@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import Glyph from './Glyph';
 
 // Нижня шторка для телефонів: не закриває камеру повністю й гортається
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
@@ -16,7 +17,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
         <div className="panel-head" style={{ marginBottom: 8 }}>
           <h3>{title}</h3>
           <button className="icon-btn" style={{ width: 32, height: 32 }} onClick={onClose} aria-label="Закрити">
-            ✕
+            <Glyph name="close" />
           </button>
         </div>
         {children}

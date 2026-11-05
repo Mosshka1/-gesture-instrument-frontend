@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { getErrorMessage, loginUser } from '../api';
 import GoogleButton from '../components/GoogleButton';
 import AuthHero from '../components/AuthHero';
+import ThemeToggle from '../components/ThemeToggle';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -33,6 +34,7 @@ function Login() {
 
   return (
     <div className="auth-page">
+      <ThemeToggle floating />
       <div className="auth-left">
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="brand">

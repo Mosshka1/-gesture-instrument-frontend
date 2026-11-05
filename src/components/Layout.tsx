@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { IconHelp, IconModes, IconPlay, IconPresets, IconRecordings, IconSounds } from './Icons';
+import ThemeToggle from './ThemeToggle';
 import { getStoredUser, initials } from '../lib/format';
 
 const LINKS = [
@@ -35,6 +36,7 @@ function Layout() {
         </nav>
 
         <div className="masthead-end">
+          <ThemeToggle />
           <NavLink to="/tutorial" className={cls} title="Як грати" data-k="tutorial">
             <IconHelp />
             <span>Навчання</span>

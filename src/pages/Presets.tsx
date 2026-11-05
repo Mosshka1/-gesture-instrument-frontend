@@ -11,6 +11,7 @@ import type { ModeId } from '../audio/modes';
 import { NOTE_NAMES, SCALES } from '../audio/music';
 import type { ScaleId } from '../audio/music';
 import { timeAgo } from '../lib/format';
+import Glyph from '../components/Glyph';
 
 type SortKey = 'recent' | 'name' | 'used' | 'favorite';
 
@@ -235,10 +236,10 @@ function Presets() {
                     <tr key={p.id}>
                       <td>
                         <div className="cell-preset" style={{ ['--c' as string]: meta.color }}>
-                          <div className="preset-swatch">{meta.icon}</div>
+                          <div className="preset-swatch"><Glyph name={meta.icon} /></div>
                           <div>
                             <div className="preset-name">
-                              {p.favorite && <span className="star">★</span>}
+                              {p.favorite && <span className="star"><Glyph name="star" /></span>}
                               {p.name}
                             </div>
                             <div className="preset-sub">{describe(p)}</div>
@@ -258,10 +259,10 @@ function Presets() {
                       <td>
                         <div className="actions">
                           <button className={'icon-btn' + (p.favorite ? ' active' : '')} title="В улюблені" onClick={() => toggleFavorite(p)}>
-                            {p.favorite ? '★' : '☆'}
+                            <Glyph name="star" fill={!!p.favorite} />
                           </button>
                           <button className="icon-btn" title="Грати з цим пресетом" onClick={() => play(p)}>
-                            ▶
+                            <Glyph name="play" />
                           </button>
                           <button className="icon-btn" title="Редагувати" onClick={() => openEdit(p)}>
                             <IconEdit />

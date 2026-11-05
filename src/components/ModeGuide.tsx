@@ -1,5 +1,6 @@
 import { MODES, getModeMeta } from '../audio/modes';
 import type { ModeId } from '../audio/modes';
+import Glyph from './Glyph';
 
 // Вибір режиму + покрокова інструкція «що робити рукою → що буде зі звуком»
 function ModeGuide({ modeId, onChange, onAll }: { modeId: ModeId; onChange: (id: ModeId) => void; onAll: () => void }) {
@@ -27,7 +28,7 @@ function ModeGuide({ modeId, onChange, onAll }: { modeId: ModeId; onChange: (id:
             <span className="mt-key" aria-hidden="true">
               {i + 1}
             </span>
-            <span className="mt-icon">{m.icon}</span>
+            <span className="mt-icon"><Glyph name={m.icon} /></span>
             <span className="mt-name">{m.name}</span>
           </button>
         ))}
@@ -45,7 +46,7 @@ function ModeGuide({ modeId, onChange, onAll }: { modeId: ModeId; onChange: (id:
         <ol className="howto">
           {meta.howTo.map((s, i) => (
             <li key={i}>
-              <span className="ht-icon">{s.icon}</span>
+              <span className="ht-icon"><Glyph name={s.icon} /></span>
               <span className="ht-text">
                 <b>{s.gesture}</b>
                 <em>{s.effect}</em>
@@ -54,7 +55,7 @@ function ModeGuide({ modeId, onChange, onAll }: { modeId: ModeId; onChange: (id:
           ))}
         </ol>
         <div className="guide-tip">
-          <span>💡</span>
+          <span><Glyph name="bulb" /></span>
           <p>{meta.tip}</p>
         </div>
       </div>

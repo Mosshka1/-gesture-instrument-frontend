@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { getErrorMessage, registerUser } from '../api';
 import GoogleButton from '../components/GoogleButton';
 import AuthHero from '../components/AuthHero';
+import ThemeToggle from '../components/ThemeToggle';
 
 function Register() {
   const [fullName, setFullName] = useState('');
@@ -34,6 +35,7 @@ function Register() {
 
   return (
     <div className="auth-page">
+      <ThemeToggle floating />
       <div className="auth-left">
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="brand">

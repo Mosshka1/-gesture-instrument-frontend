@@ -4,6 +4,7 @@ import { IconTrash } from '../components/Icons';
 import { addFreesoundSound, deleteSound, getErrorMessage, getSounds, searchFreesound, uploadSound, uploadUrl } from '../api';
 import type { ApiSound, FreesoundResult } from '../api';
 import { formatBytes } from '../lib/format';
+import Glyph from '../components/Glyph';
 
 type SoundType = 'instrument' | 'background';
 
@@ -121,7 +122,7 @@ function SoundSection({
         }}
       >
         <input ref={inputRef} type="file" accept="audio/*" hidden onChange={(e) => pickFile(e.target.files?.[0])} />
-        <span className="dz-icon">{file ? '♪' : '⇪'}</span>
+        <span className="dz-icon"><Glyph name={file ? 'note' : 'upload'} /></span>
         {file ? (
           <>
             <span className="dz-title">{file.name}</span>
@@ -148,7 +149,7 @@ function SoundSection({
           sounds.map((s) => (
             <div className="sound-item" key={s.id}>
               <button className={'icon-btn' + (playingId === s.id ? ' active' : '')} onClick={() => toggle(s)} title="Прослухати">
-                {playingId === s.id ? '❚❚' : '▶'}
+                <Glyph name={playingId === s.id ? 'pause' : 'play'} />
               </button>
               <span className="nm">
                 {s.name}
@@ -251,7 +252,7 @@ function FreesoundLibrary({ onAdded }: { onAdded: () => void }) {
         {results.map((r) => (
           <div className="sound-item fs-item" key={r.id}>
             <button className={'icon-btn' + (playingId === r.id ? ' active' : '')} onClick={() => toggle(r)} title="Прослухати">
-              {playingId === r.id ? '❚❚' : '▶'}
+              <Glyph name={playingId === r.id ? 'pause' : 'play'} />
             </button>
             <span className="nm">
               {r.name}
