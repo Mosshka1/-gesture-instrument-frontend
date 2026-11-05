@@ -72,12 +72,23 @@ export function extractFeatures(lm: Landmarks, cal: Calibration): Features {
   const angle = Math.atan2(lm[17].y - lm[5].y, lm[17].x - lm[5].x);
   const tilt = mapRange(angle, -Math.PI / 2, Math.PI / 2, -1, 1);
 
-  const extended = (tip: number, pip: number) => distance(lm[tip], wrist) > distance(lm[pip], wrist) * 1.12;
+  // палець випрямлений, якщо суглоб майже прямий (кут при PIP) і кінчик далі від зап’ястя, ніж PIP.
+  // Так рахунок не залежить від того, куди повернута рука, і краще працює на слабких камерах.
+  const bend = (mcp: number, pip: number, tip: number) => {
+    const a = [lm[mcp].x - lm[pip].x, lm[mcp].y - lm[pip].y, (lm[mcp].z - lm[pip].z) * 0.6];
+    const b = [lm[tip].x - lm[pip].x, lm[tip].y - lm[pip].y, (lm[tip].z - lm[pip].z) * 0.6];
+    const dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const na = Math.hypot(a[0], a[1], a[2]) || 1;
+    const nb = Math.hypot(b[0], b[1], b[2]) || 1;
+    return (Math.acos(Math.max(-1, Math.min(1, dot / (na * nb)))) * 180) / Math.PI;
+  };
+  const extended = (mcp: number, pip: number, tip: number) =>
+    bend(mcp, pip, tip) > 140 && distance(lm[tip], wrist) > distance(lm[pip], wrist) * 1.05;
   let fingers = 0;
-  if (extended(8, 6)) fingers++;
-  if (extended(12, 10)) fingers++;
-  if (extended(16, 14)) fingers++;
-  if (extended(20, 18)) fingers++;
+  if (extended(5, 6, 8)) fingers++;
+  if (extended(9, 10, 12)) fingers++;
+  if (extended(13, 14, 16)) fingers++;
+  if (extended(17, 18, 20)) fingers++;
   if (distance(lm[4], lm[5]) / size > 0.75) fingers++;
 
   const pinch = [8, 12, 16, 20].map((t) => distance(lm[4], lm[t]) / size);
@@ -89,10 +100,10 @@ export function extractFeatures(lm: Landmarks, cal: Calibration): Features {
   const peace = idxExt && midExt && ringCurl && pinkyCurl;
 
   let gesture = 'Рука в кадрі';
-  if (pinch[0] < 0.55) gesture = 'Щипок';
+  if (pinch[0] < 0.55 && fingers >= 1) gesture = 'Щипок';
   else if (peace) gesture = 'Перемога (V)';
   else if (fingers >= 5 || openness > 0.8) gesture = 'Відкрита долоня';
-  else if (fingers === 0 || openness < 0.2) gesture = 'Кулак';
+  else if (fingers === 0 || (openness < 0.2 && fingers < 1)) gesture = 'Кулак';
   else if (fingers === 1) gesture = 'Вказівний палець';
   else gesture = `Пальців: ${fingers}`;
 

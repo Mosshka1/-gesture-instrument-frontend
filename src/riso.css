@@ -26,7 +26,7 @@
   --bg: var(--paper);
   --bg-soft: var(--paper-2);
   --panel: var(--paper-2);
-  --panel-2: var(--fill);
+  --panel-2: var(--surface);
   --border: var(--rule);
   --border-strong: var(--ink);
   --text: var(--ink);
@@ -38,7 +38,7 @@
   --display: 'Unbounded', 'Onest', system-ui, sans-serif;
   --mono: 'Onest', system-ui, sans-serif;
 
-  --fill: #ffffff;
+  --surface: #ffffff;
   --dots: rgba(20, 23, 61, 0.09);
   --fixed: #14173d;
   --sh: var(--ink);
@@ -425,7 +425,7 @@ textarea.input {
   font-family: var(--sans);
   font-size: 15px;
   color: var(--ink);
-  background: var(--fill);
+  background: var(--surface);
   border: 2px solid var(--ink);
   border-radius: 10px;
   box-shadow: inset 3px 3px 0 rgba(20, 23, 61, 0.07);
@@ -439,7 +439,7 @@ textarea.input {
 .input:focus,
 .select:focus {
   outline: none;
-  background: var(--fill);
+  background: var(--surface);
   border-color: var(--ink);
   box-shadow: 4px 4px 0 var(--s), 4px 4px 0 2px var(--sh);
 }
@@ -512,7 +512,7 @@ textarea.input {
   letter-spacing: 0;
   text-transform: none;
   color: var(--ink);
-  background: color-mix(in srgb, var(--c, var(--s)) 55%, var(--fill));
+  background: color-mix(in srgb, var(--c, var(--s)) 55%, var(--surface));
   border: 2px solid var(--ink);
   border-radius: 999px;
 }
@@ -729,7 +729,7 @@ textarea.input {
 }
 .rec-btn.rec,
 .rec-btn.on {
-  background: var(--fill);
+  background: var(--surface);
   color: var(--red);
 }
 .stage-overlay {
@@ -748,7 +748,7 @@ textarea.input {
 .param .bar,
 .bar {
   height: 12px;
-  background: var(--fill);
+  background: var(--surface);
   border: 2px solid var(--ink);
   border-radius: 999px;
   overflow: hidden;
@@ -806,7 +806,7 @@ input[type='range'] {
 .rec-item:hover,
 .mode-tile:hover,
 .starter:hover {
-  background: var(--fill);
+  background: var(--surface);
   transform: translate(-2px, -2px);
   box-shadow: 5px 5px 0 var(--sh);
 }
@@ -814,7 +814,7 @@ input[type='range'] {
 .starter.selected,
 .mode-tile.active,
 .starter.active {
-  background: color-mix(in srgb, var(--c, var(--s)) 40%, var(--fill));
+  background: color-mix(in srgb, var(--c, var(--s)) 40%, var(--surface));
 }
 .mode-card {
   color: var(--ink);
@@ -824,7 +824,7 @@ input[type='range'] {
   box-shadow: var(--shadow);
 }
 .mode-card.selected {
-  background: color-mix(in srgb, var(--c, var(--s)) 20%, var(--fill));
+  background: color-mix(in srgb, var(--c, var(--s)) 20%, var(--surface));
 }
 .mode-icon {
   background: var(--c, var(--s));
@@ -863,14 +863,14 @@ input[type='range'] {
   color: var(--ink);
 }
 .dropzone {
-  background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(20, 23, 61, 0.05) 10px 20px), var(--fill);
+  background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(20, 23, 61, 0.05) 10px 20px), var(--surface);
   border: 3px dashed var(--ink);
   border-radius: 14px;
   color: var(--ink);
 }
 .dropzone:hover,
 .dropzone.over {
-  background: color-mix(in srgb, var(--s) 25%, var(--fill));
+  background: color-mix(in srgb, var(--s) 25%, var(--surface));
 }
 .dz-sub {
   color: var(--ink-soft);
@@ -1063,7 +1063,7 @@ input[type='range'] {
 .mode-tile:hover {
   transform: translate(-1px, -1px);
   box-shadow: 4px 4px 0 var(--sh);
-  background: var(--fill);
+  background: var(--surface);
 }
 .mode-tile:active {
   transform: translate(3px, 3px);
@@ -1102,7 +1102,7 @@ kbd {
   font-family: var(--sans);
   font-weight: 700;
   color: var(--ink);
-  background: var(--fill);
+  background: var(--surface);
   border: 2px solid var(--ink);
   border-radius: 6px;
   box-shadow: 0 2px 0 var(--ink);
@@ -1120,7 +1120,7 @@ kbd {
   color: var(--ink);
 }
 .seg {
-  background: var(--fill);
+  background: var(--surface);
   border: 2px solid var(--ink);
   border-radius: 10px;
 }
@@ -1136,7 +1136,7 @@ kbd {
 }
 .note-btn {
   color: var(--ink);
-  background: var(--fill);
+  background: var(--surface);
   border: 2px solid var(--ink);
 }
 .note-btn:hover,
@@ -1146,7 +1146,7 @@ kbd {
 }
 .progress,
 .loop-bar {
-  background: var(--fill);
+  background: var(--surface);
   border: 2px solid var(--ink);
   border-radius: 999px;
 }
@@ -1248,7 +1248,7 @@ kbd {
   color: var(--on);
 }
 .step-item.done {
-  background: color-mix(in srgb, var(--green) 40%, var(--fill));
+  background: color-mix(in srgb, var(--green) 40%, var(--surface));
 }
 .stage-badge {
   color: var(--ink) !important;
@@ -1294,7 +1294,7 @@ kbd {
   --ink-soft: #a5a8b0;
   --ink-faint: #757985;
   --rule: rgba(238, 238, 234, 0.14);
-  --fill: #2a2d35;
+  --surface: #2a2d35;
   --dots: rgba(238, 238, 234, 0.035);
   --sh: color-mix(in srgb, var(--s) 55%, #000);
   color-scheme: dark;
@@ -1371,7 +1371,7 @@ kbd {
   stroke: #16171b;
 }
 :root[data-theme='dark'] .dropzone {
-  background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(238, 238, 234, 0.05) 10px 20px), var(--fill);
+  background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(238, 238, 234, 0.05) 10px 20px), var(--surface);
 }
 :root[data-theme='dark'] .input {
   box-shadow: inset 3px 3px 0 rgba(0, 0, 0, 0.25);
@@ -1659,7 +1659,7 @@ kbd {
 select,
 .select {
   color: var(--ink);
-  background-color: var(--fill);
+  background-color: var(--surface);
   border: 2px solid var(--ink);
   border-radius: 10px;
   font-family: var(--sans);
@@ -1708,7 +1708,7 @@ select option {
   padding: 0;
 }
 .seg-btn {
-  background: var(--fill);
+  background: var(--surface);
   border: 2px solid var(--ink);
   border-radius: 999px;
   padding: 6px 14px;
@@ -1729,7 +1729,7 @@ select option {
 
 .select.compact,
 .select {
-  background-color: var(--fill);
+  background-color: var(--surface);
   color: var(--ink);
 }
 .main {
@@ -2001,4 +2001,86 @@ select option {
 .btn.dng:hover:not(:disabled) {
   color: #fff;
   background: color-mix(in srgb, var(--red) 88%, #000);
+}
+
+/* ---------- Повзунки: друкарські, без виходу за рамку ---------- */
+
+input[type='range'] {
+  width: calc(100% - 18px);
+  margin: 8px 9px;
+  height: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--s) var(--fill, 50%), var(--surface) var(--fill, 50%));
+  box-shadow: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  border: 3px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
+  transition: transform 0.12s var(--ease);
+}
+input[type='range']:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  border: 3px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
+}
+.slider-block,
+.sp-block,
+.card,
+.sound-panel {
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Довгі назви файлів не ламають верстку ---------- */
+
+.sound-item {
+  min-width: 0;
+}
+.sound-item .nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sound-item .nm small,
+.sound-item .nm .credit {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fs-item .nm {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.select,
+select {
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+.dz-title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dropzone > span:last-child,
+.dz-text {
+  min-width: 0;
+  max-width: 100%;
+}
+.sound-panel select,
+.sp-block select {
+  width: 100%;
 }
