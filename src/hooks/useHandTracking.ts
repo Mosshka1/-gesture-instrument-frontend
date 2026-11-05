@@ -36,6 +36,8 @@ export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
     let cameraInstance: any = null;
     let isActive = true;
     let frames = 0;
+    let slowSeconds = 0;
+    let lite = /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent);
     let lastFpsTime = performance.now();
 
     if (!window.Hands || !window.Camera) {
@@ -85,7 +87,14 @@ export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
       frames++;
       const now = performance.now();
       if (now - lastFpsTime >= 1000) {
-        setFps(Math.round((frames * 1000) / (now - lastFpsTime)));
+        const cur = Math.round((frames * 1000) / (now - lastFpsTime));
+        setFps(cur);
+        // якщо комп’ютер не тягне — автоматично переходимо на легшу модель
+        slowSeconds = cur < 16 ? slowSeconds + 1 : 0;
+        if (!lite && slowSeconds >= 3) {
+          lite = true;
+          hands.setOptions({ modelComplexity: 0 });
+        }
         frames = 0;
         lastFpsTime = now;
         setStatus('ready');

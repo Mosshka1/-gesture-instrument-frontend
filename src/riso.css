@@ -1288,15 +1288,15 @@ kbd {
    ===================================================================== */
 
 :root[data-theme='dark'] {
-  --paper: #0e1030;
-  --paper-2: #181b44;
-  --ink: #eceeff;
-  --ink-soft: #a9aed6;
-  --ink-faint: #7378a8;
-  --rule: rgba(236, 238, 255, 0.16);
-  --fill: #22265a;
-  --dots: rgba(236, 238, 255, 0.055);
-  --sh: color-mix(in srgb, var(--s) 78%, #000);
+  --paper: #16171b;
+  --paper-2: #202228;
+  --ink: #eeeeea;
+  --ink-soft: #a5a8b0;
+  --ink-faint: #757985;
+  --rule: rgba(238, 238, 234, 0.14);
+  --fill: #2a2d35;
+  --dots: rgba(238, 238, 234, 0.035);
+  --sh: color-mix(in srgb, var(--s) 55%, #000);
   color-scheme: dark;
 }
 :root[data-theme='dark'] .app-shell[data-section='play'],
@@ -1362,16 +1362,16 @@ kbd {
   color: var(--ink);
 }
 :root[data-theme='dark'] .auth-right {
-  background-color: #1b2a8f;
+  background-color: #1a2466;
 }
 :root[data-theme='dark'] .hero-card svg.hand .bone {
   stroke: #f6f7fb;
 }
 :root[data-theme='dark'] .hero-card svg.hand .joint {
-  stroke: #0e1030;
+  stroke: #16171b;
 }
 :root[data-theme='dark'] .dropzone {
-  background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(236, 238, 255, 0.05) 10px 20px), var(--fill);
+  background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(238, 238, 234, 0.05) 10px 20px), var(--fill);
 }
 :root[data-theme='dark'] .input {
   box-shadow: inset 3px 3px 0 rgba(0, 0, 0, 0.25);
@@ -1388,12 +1388,12 @@ kbd {
   -webkit-text-stroke: 0;
 }
 :root[data-theme='dark'] .stage {
-  background: #070818;
+  background: #0b0b0d;
   border-color: var(--ink);
 }
 :root[data-theme='dark'] .skeleton {
-  background: linear-gradient(90deg, rgba(236, 238, 255, 0.06), rgba(236, 238, 255, 0.13), rgba(236, 238, 255, 0.06));
-  border-color: rgba(236, 238, 255, 0.18);
+  background: linear-gradient(90deg, rgba(238, 238, 234, 0.06), rgba(238, 238, 234, 0.13), rgba(238, 238, 234, 0.06));
+  border-color: rgba(238, 238, 234, 0.18);
 }
 
 /* ---------- Іконки, перемикач теми ---------- */

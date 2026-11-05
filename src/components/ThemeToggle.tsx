@@ -27,7 +27,7 @@ function ThemeToggle({ floating }: { floating?: boolean }) {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', theme === 'dark' ? '#0e1030' : '#e9ecf2');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#16171b' : '#e9ecf2');
   }, [theme]);
 
   const flip = () => {

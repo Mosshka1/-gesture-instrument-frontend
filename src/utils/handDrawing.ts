@@ -16,14 +16,14 @@ export function drawHandSkeleton(ctx: CanvasRenderingContext2D, landmarks: any[]
   const strokeAll = (color: string, w: number) => {
     ctx.strokeStyle = color;
     ctx.lineWidth = w;
+    ctx.beginPath();
     HAND_CONNECTIONS.forEach(([start, end]) => {
       const p1 = landmarks[start];
       const p2 = landmarks[end];
-      ctx.beginPath();
       ctx.moveTo(p1.x * width, p1.y * height);
       ctx.lineTo(p2.x * width, p2.y * height);
-      ctx.stroke();
     });
+    ctx.stroke();
   };
   strokeAll('#0d0f24', 8);
   strokeAll('#ff4f9a', 4);
