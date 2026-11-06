@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { IconHelp, IconModes, IconPlay, IconPresets, IconRecordings, IconSounds } from './Icons';
 import Footer from './Footer';
@@ -16,6 +17,9 @@ function Layout() {
   const user = getStoredUser();
   const { pathname } = useLocation();
   // кожен розділ друкується своєю фарбою (див. [data-section] в riso.css)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
   const section = pathname.split('/')[1] || 'play';
   const cls = ({ isActive }: { isActive: boolean }) => 'nav-link' + (isActive ? ' active' : '');
 

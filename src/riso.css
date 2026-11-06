@@ -2299,3 +2299,6 @@ input[type='range'] {
 .stage-overlay .btn:not(.primary),
 .stage-overlay .btn:not(.primary) * { color: var(--ink); }
 .stage-overlay .btn:not(.primary) { background: var(--surface); }
+
+.crumb { margin-left: 14px; }
+@media (max-width: 820px), (max-height: 520px) { .crumb { margin-left: 10px; } }
