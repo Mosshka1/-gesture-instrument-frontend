@@ -2302,3 +2302,13 @@ input[type='range'] {
 
 .crumb { margin-left: 14px; }
 @media (max-width: 820px), (max-height: 520px) { .crumb { margin-left: 10px; } }
+
+/* Активна плитка режиму: іконка завжди на світлій підкладці, текст за контрастом до кольору режиму */
+.app-shell .mode-tile.active .mt-icon { background: #f6f7fb !important; }
+.app-shell .mode-tile.active .mt-icon svg,
+:root[data-theme='dark'] .mode-tile.active .mt-icon svg { color: #14173d !important; }
+.app-shell .mode-tile.active.on-dark .mt-name,
+.app-shell .mode-tile.active.on-dark .mt-key,
+:root[data-theme='dark'] .app-shell .mode-tile.active.on-dark,
+:root[data-theme='dark'] .mode-tile.active.on-dark .mt-name,
+:root[data-theme='dark'] .mode-tile.active.on-dark .mt-key { color: #fff !important; }
