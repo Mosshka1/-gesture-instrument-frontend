@@ -787,7 +787,7 @@ function Instrument() {
             {!audioStarted && status !== 'error' && (
               <div className="stage-overlay">
                 <div>
-                  <h3>Готова грати?</h3>
+                  <h3>Час грати</h3>
                   <p>Браузер дозволяє звук лише після кліку. Натисни кнопку — і рухай рукою перед камерою. На iPhone вимкни беззвучний режим (перемикач збоку), інакше звуку не буде.</p>
                   <button className="btn primary" style={{ padding: '14px 28px', fontSize: 16 }} onClick={startAudio}>
                     <Glyph name="play" /> Увімкнути звук

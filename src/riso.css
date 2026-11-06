@@ -2262,3 +2262,40 @@ input[type='range'] {
   width: 100%;
   min-width: 0;
 }
+
+
+/* ---------- Оверлей сцени: паперова картка ---------- */
+.stage-overlay {
+  background: rgba(20, 23, 61, 0.72);
+  backdrop-filter: none;
+  padding: 16px;
+}
+.stage-overlay > div {
+  max-width: 440px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 6px 18px 6px 18px;
+  box-shadow: 7px 7px 0 var(--s);
+  padding: 26px 26px 24px;
+  text-align: left;
+  transform: rotate(-.6deg);
+}
+.stage-overlay,
+.stage-overlay h3,
+.stage-overlay p,
+.stage-overlay div { color: var(--ink); }
+.stage-overlay h3 {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(24px, 5vw, 32px);
+  line-height: 1.05;
+  margin: 0 0 10px;
+  text-shadow: .04em .04em 0 var(--s);
+}
+.stage-overlay p { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0 0 18px; }
+.stage-overlay .btn,
+.stage-overlay .btn * { color: var(--on); }
+.stage-overlay .btn { background: var(--s); }
+.stage-overlay .btn:not(.primary),
+.stage-overlay .btn:not(.primary) * { color: var(--ink); }
+.stage-overlay .btn:not(.primary) { background: var(--surface); }
