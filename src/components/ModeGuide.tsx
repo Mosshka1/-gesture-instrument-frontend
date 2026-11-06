@@ -19,7 +19,7 @@ function ModeGuide({ modeId, onChange, onAll }: { modeId: ModeId; onChange: (id:
         {MODES.map((m, i) => (
           <button
             key={m.id}
-            className={'mode-tile' + (m.id === modeId ? ' active' : '')}
+            className={'mode-tile' + (m.id === modeId ? ' active' : '') + (m.id === 'chord' || m.id === 'lead' ? ' on-dark' : '')}
             style={{ ['--c' as string]: m.color }}
             onClick={() => onChange(m.id)}
             title={m.tagline}
