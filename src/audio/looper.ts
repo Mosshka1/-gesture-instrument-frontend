@@ -1,3 +1,5 @@
+import type { SavedLooper } from './looperStore';
+
 // Лупер: записує «шари» гри по колу. Перший шар задає довжину петлі,
 // кожен наступний записується рівно на одне коло поверх тих, що вже грають.
 
@@ -254,6 +256,72 @@ export class Looper {
     const layer: Layer = { id: this.nextId++, name, muted: false, buffer, gain, src: null };
     this.layers.push(layer);
     this.startSource(layer);
+  }
+
+
+  /** Знімок стану для збереження (PCM усіх шарів). */
+  snapshot(): SavedLooper | null {
+    if (!this.layers.length || !this.duration) return null;
+    return {
+      duration: this.duration,
+      sampleRate: this.ctx.sampleRate,
+      layers: this.layers.map((l) => ({
+        name: l.name,
+        muted: l.muted,
+        left: l.buffer.getChannelData(0).slice(),
+        right: l.buffer.getChannelData(Math.min(1, l.buffer.numberOfChannels - 1)).slice(),
+      })),
+    };
+  }
+
+  /** Відновлює шари зі збереженого стану (лише коли лупер порожній). */
+  restore(state: SavedLooper) {
+    if (this.phase !== 'idle' || this.layers.length) return;
+    this.duration = state.duration;
+    this.origin = this.ctx.currentTime;
+    for (const sl of state.layers.slice(0, MAX_LAYERS)) {
+      const buf = this.ctx.createBuffer(2, sl.left.length, state.sampleRate);
+      buf.copyToChannel(sl.left, 0);
+      buf.copyToChannel(sl.right, 1);
+      this.addLayerFromBuffer(buf, sl.name);
+      this.layers[this.layers.length - 1].muted = sl.muted;
+      if (sl.muted) this.layers[this.layers.length - 1].gain.gain.value = 0;
+    }
+    this.phase = 'playing';
+    this.emit();
+  }
+
+  /** Зводить увімкнені шари в один WAV (петля повторюється, щоб запис не був занадто коротким). */
+  exportWav(): { blob: Blob; duration: number } | null {
+    const active = this.layers.filter((l) => !l.muted);
+    if (!active.length || !this.duration) return null;
+    const sr = active[0].buffer.sampleRate;
+    const loopLen = active[0].buffer.length;
+    const cycles = Math.max(1, Math.min(Math.round(15 / this.duration), Math.floor(40 / this.duration)));
+    const total = loopLen * cycles;
+    const mix = [new Float32Array(total), new Float32Array(total)];
+    for (const l of active) {
+      for (let ch = 0; ch < 2; ch++) {
+        const src = l.buffer.getChannelData(Math.min(ch, l.buffer.numberOfChannels - 1));
+        const out = mix[ch];
+        for (let i = 0; i < total; i++) out[i] += src[i % src.length] * 0.9;
+      }
+    }
+    const data = new DataView(new ArrayBuffer(44 + total * 4));
+    const w = (o: number, s: string) => { for (let i = 0; i < s.length; i++) data.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); data.setUint32(4, 36 + total * 4, true); w(8, 'WAVE'); w(12, 'fmt ');
+    data.setUint32(16, 16, true); data.setUint16(20, 1, true); data.setUint16(22, 2, true);
+    data.setUint32(24, sr, true); data.setUint32(28, sr * 4, true); data.setUint16(32, 4, true); data.setUint16(34, 16, true);
+    w(36, 'data'); data.setUint32(40, total * 4, true);
+    let o = 44;
+    for (let i = 0; i < total; i++) {
+      for (let ch = 0; ch < 2; ch++) {
+        const v = Math.max(-1, Math.min(1, mix[ch][i]));
+        data.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true);
+        o += 2;
+      }
+    }
+    return { blob: new Blob([data.buffer], { type: 'audio/wav' }), duration: Math.round(total / sr) };
   }
 
   toggleMute(id: number) {

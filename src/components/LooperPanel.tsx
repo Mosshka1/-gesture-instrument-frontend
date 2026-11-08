@@ -3,7 +3,7 @@ import type { Looper } from '../audio/looper';
 import { MAX_LAYERS } from '../audio/looper';
 import Glyph from './Glyph';
 
-function LooperPanel({ looper, modeName, version }: { looper: Looper | null; modeName: string; version: number }) {
+function LooperPanel({ looper, modeName, version, onSave, savedLayers = 0 }: { looper: Looper | null; modeName: string; version: number; onSave?: () => void; savedLayers?: number }) {
   const [pos, setPos] = useState(0);
 
   useEffect(() => {
@@ -19,7 +19,7 @@ function LooperPanel({ looper, modeName, version }: { looper: Looper | null; mod
           <h3>Лупер</h3>
           <span className="mini-tag">шари</span>
         </div>
-        <p className="hint" style={{ margin: 0 }}>Натисни «Увімкнути звук», щоб користуватись лупером.</p>
+        <p className="hint" style={{ margin: 0 }}>Натисни «Увімкнути звук», щоб користуватись лупером.{savedLayers > 0 && ` Збережений лупер (шарів: ${savedLayers}) відновиться автоматично.`}</p>
       </div>
     );
   }
@@ -62,6 +62,9 @@ function LooperPanel({ looper, modeName, version }: { looper: Looper | null; mod
               + Додати шар
             </button>
             <button className="btn" onClick={() => looper.clear()}>Очистити</button>
+            {onSave && (
+              <button className="btn block" disabled={layerList.every((l) => l.muted)} onClick={onSave}>Зберегти запис</button>
+            )}
           </>
         )}
         {(phase === 'armed' || phase === 'recLayer') && (

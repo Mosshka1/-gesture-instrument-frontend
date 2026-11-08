@@ -9,6 +9,7 @@ import SoundPanel from '../components/SoundPanel';
 import Sheet from '../components/Sheet';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { Looper } from '../audio/looper';
+import { loadLooper, saveLooper } from '../audio/looperStore';
 import { IconFullscreen, IconGear } from '../components/Icons';
 import { useHandTracking } from '../hooks/useHandTracking';
 import { HandTracker } from '../audio/features';
@@ -82,6 +83,9 @@ function Instrument() {
   const settingsRef = useRef<HTMLDivElement | null>(null);
   const instRef = useRef<GainNode | null>(null);
   const looperRef = useRef<Looper | null>(null);
+  const looperSaveTimer = useRef(0);
+  const [savedLayers, setSavedLayers] = useState(0);
+  useEffect(() => { loadLooper().then((s) => setSavedLayers(s?.layers.length ?? 0)); }, []);
   const wetRef = useRef<GainNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const modeRef = useRef<ModeVoice | null>(null);
@@ -282,8 +286,20 @@ function Instrument() {
     outRef.current = out;
     fxRef.current = { tone: toneF, echoSend, fb, out, wetOut };
     instRef.current = instOut;
-    const lp = new Looper(ctx, instOut, master, () => setLooperVersion((v) => v + 1));
+    const lp = new Looper(ctx, instOut, master, () => {
+      setLooperVersion((v) => v + 1);
+      // зберігаємо стан лупера, щоб він пережив оновлення сторінки
+      if (lp.phase === 'playing' || lp.phase === 'idle') {
+        window.clearTimeout(looperSaveTimer.current);
+        looperSaveTimer.current = window.setTimeout(() => {
+          if (looperRef.current === lp) saveLooper(lp.snapshot());
+        }, 400);
+      }
+    });
     looperRef.current = lp;
+    loadLooper().then((saved) => {
+      if (saved && looperRef.current === lp) lp.restore(saved);
+    });
     setLooper(lp);
     wetRef.current = wetIn;
     analyserRef.current = analyser;
@@ -535,6 +551,17 @@ function Instrument() {
     recorderRef.current = recorder;
     setRecSeconds(0);
     setIsRecording(true);
+  };
+
+  // зберегти звучання лупера як окремий запис
+  const saveLooperMix = () => {
+    const res = looperRef.current?.exportWav();
+    if (!res) {
+      setNotice('У лупері немає активних шарів для запису');
+      return;
+    }
+    setRecName('Мій лупер');
+    setPendingRec({ blob: res.blob, duration: res.duration, mode: modeId });
   };
 
   const stopRecording = () => {
@@ -876,7 +903,7 @@ function Instrument() {
           <div>
             <ModeGuide modeId={modeId} onChange={changeMode} onAll={() => navigate('/modes')} />
 
-            <LooperPanel looper={looper} modeName={meta.name} version={looperVersion} />
+            <LooperPanel looper={looper} modeName={meta.name} version={looperVersion} onSave={saveLooperMix} savedLayers={savedLayers} />
             <div className="panel">
               <div className="panel-head">
                 <h3>Параметри звуку</h3>

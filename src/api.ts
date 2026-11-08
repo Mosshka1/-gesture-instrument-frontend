@@ -162,7 +162,7 @@ export async function uploadRecording(name: string, blob: Blob, mode?: string, d
   formData.append('name', name);
   if (mode) formData.append('mode', mode);
   if (durationSec !== undefined) formData.append('durationSec', String(durationSec));
-  const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
+  const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('wav') ? 'wav' : blob.type.includes('ogg') ? 'ogg' : 'webm';
   formData.append('audio', blob, `recording.${ext}`);
 
   const response = await api.post('/recordings', formData, {
