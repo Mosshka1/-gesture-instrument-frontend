@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
-import { getErrorMessage, getMe, getPresets, getRecordings, updateMe } from '../api';
+import Modal from '../components/Modal';
+import { saveLooper } from '../audio/looperStore';
+import { deleteAccount, getErrorMessage, getMe, getPresets, getRecordings, updateMe } from '../api';
 import type { ApiUser } from '../api';
 import type { Calibration } from '../audio/features';
 import { fetchCalibration, loadCachedCalibration, persistCalibration } from '../lib/calibration';
@@ -17,6 +19,9 @@ function Profile() {
   const [error, setError] = useState('');
   const [cal, setCal] = useState<Calibration>(() => loadCachedCalibration());
   const [saved, setSaved] = useState(true);
+  const [showDelete, setShowDelete] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const [counts, setCounts] = useState({ presets: 0, takes: 0 });
   const loadedRef = useRef(false);
   const timerRef = useRef<number | null>(null);
@@ -57,8 +62,13 @@ function Profile() {
   const saveName = async () => {
     setError('');
     setMsg('');
+    const clean = name.trim().replace(/\s+/g, ' ');
+    if (clean.length < 2 || clean.length > 60) {
+      setError('Ім’я має містити від 2 до 60 символів');
+      return;
+    }
     try {
-      const updated = await updateMe(name);
+      const updated = await updateMe(clean);
       setUser(updated);
       localStorage.setItem('user', JSON.stringify({ id: updated.id, fullName: updated.fullName, email: updated.email }));
       setEditing(false);
@@ -68,11 +78,31 @@ function Profile() {
     }
   };
 
-  const logout = () => {
+  const clearLocalSession = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('activePreset');
+    void saveLooper(null); // лупер належить користувачу: не лишаємо його наступному, хто увійде
+  };
+
+  const logout = () => {
+    clearLocalSession();
     navigate('/login');
+  };
+
+  const removeAccount = async () => {
+    setDeleting(true);
+    setError('');
+    try {
+      await deleteAccount();
+      clearLocalSession();
+      navigate('/login');
+    } catch (err) {
+      setShowDelete(false);
+      setError(getErrorMessage(err, 'Не вдалось видалити акаунт'));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const memberSince = user?.createdAt
@@ -169,6 +199,16 @@ function Profile() {
               {error && <div className="error-box">{error}</div>}
             </div>
 
+            <div className="card" style={{ marginBottom: 20 }}>
+              <h2 className="card-title">Небезпечна зона</h2>
+              <p className="hint" style={{ marginTop: 0 }}>
+                Видалення акаунта стирає пресети, записи та власні звуки без можливості відновлення.
+              </p>
+              <button className="btn danger" onClick={() => { setConfirmText(''); setShowDelete(true); }}>
+                Видалити акаунт
+              </button>
+            </div>
+
             <div className="card" id="tracking">
               <div className="panel-head">
                 <h2 className="card-title" style={{ margin: 0 }}>Чутливість і калібрування трекінгу</h2>
@@ -226,6 +266,25 @@ function Profile() {
           </div>
         </div>
       </div>
+
+      {showDelete && (
+        <Modal
+          title="Видалити акаунт?"
+          subtitle="Усі твої пресети, записи та звуки буде видалено назавжди."
+          onClose={() => !deleting && setShowDelete(false)}
+          actions={
+            <>
+              <button className="btn" onClick={() => setShowDelete(false)} disabled={deleting}>Скасувати</button>
+              <button className="btn danger" onClick={removeAccount} disabled={deleting || confirmText.trim().toUpperCase() !== 'ВИДАЛИТИ'}>
+                {deleting ? 'Видаляємо…' : 'Видалити назавжди'}
+              </button>
+            </>
+          }
+        >
+          <label className="field">Щоб підтвердити, напиши слово ВИДАЛИТИ</label>
+          <input className="input" value={confirmText} autoFocus onChange={(e) => setConfirmText(e.target.value)} />
+        </Modal>
+      )}
     </>
   );
 }

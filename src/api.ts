@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { saveLooper } from './audio/looperStore';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:3000';
 
@@ -24,6 +25,8 @@ api.interceptors.response.use(
     if (error?.response?.status === 401 && !isAuthCall && localStorage.getItem('token')) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('activePreset');
+      void saveLooper(null);
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -108,6 +111,10 @@ export async function getMe(): Promise<ApiUser> {
 export async function updateMe(fullName: string): Promise<ApiUser> {
   const response = await api.put('/auth/me', { fullName });
   return response.data.user;
+}
+
+export async function deleteAccount() {
+  await api.delete('/auth/me');
 }
 
 // ---------- Налаштування / калібрування ----------
