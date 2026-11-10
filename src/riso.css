@@ -2312,3 +2312,17 @@ input[type='range'] {
 :root[data-theme='dark'] .app-shell .mode-tile.active.on-dark,
 :root[data-theme='dark'] .mode-tile.active.on-dark .mt-name,
 :root[data-theme='dark'] .mode-tile.active.on-dark .mt-key { color: #fff !important; }
+
+/* ---------- юридичні сторінки ---------- */
+.legal-page { min-height: 100vh; background: var(--paper); color: var(--ink); padding: 40px 16px 64px; }
+.legal { max-width: 720px; margin: 0 auto; background: var(--surface); border: 2px solid var(--ink); border-radius: 6px 18px 6px 18px; box-shadow: 7px 7px 0 var(--ink); padding: 32px 36px; line-height: 1.6; }
+.legal h1 { font-family: 'Unbounded', sans-serif; font-size: 26px; margin: 14px 0 4px; }
+.legal h2 { font-family: 'Unbounded', sans-serif; font-size: 16px; margin: 26px 0 6px; }
+.legal ul { padding-left: 20px; }
+.legal a { color: inherit; text-decoration: underline; }
+.legal-date { color: var(--ink-soft); font-size: 14px; margin-top: 0; }
+.legal-back { font-size: 14px; }
+.legal-links { margin-top: 32px; font-size: 14px; color: var(--ink-soft); }
+.legal-mini { font-size: 13px; margin-top: 6px; }
+.legal-mini a { color: inherit; text-decoration: underline; }
+@media (max-width: 600px) { .legal { padding: 22px 18px; } .legal h1 { font-size: 21px; } }

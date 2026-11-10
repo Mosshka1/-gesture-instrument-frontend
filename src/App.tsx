@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Tutorial from './pages/Tutorial';
 import Recordings from './pages/Recordings';
 import Sounds from './pages/Sounds';
+import Legal from './pages/Legal';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -23,6 +24,8 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/privacy" element={<Legal />} />
+        <Route path="/terms" element={<Legal />} />
 
         <Route
           element={

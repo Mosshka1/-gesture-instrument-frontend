@@ -70,6 +70,9 @@ function Register() {
           <p className="auth-foot">
             Вже є акаунт? <Link to="/login">Увійти</Link>
           </p>
+          <p className="auth-foot legal-mini">
+            Реєструючись, ти погоджуєшся з <Link to="/terms">умовами</Link> та <Link to="/privacy">політикою конфіденційності</Link>
+          </p>
         </form>
       </div>
       <div className="auth-right">

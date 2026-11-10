@@ -66,6 +66,9 @@ function Login() {
           <p className="auth-foot">
             Вперше тут? <Link to="/register">Створити акаунт</Link>
           </p>
+          <p className="auth-foot legal-mini">
+            <Link to="/privacy">Конфіденційність</Link> · <Link to="/terms">Умови</Link>
+          </p>
         </form>
       </div>
       <div className="auth-right">

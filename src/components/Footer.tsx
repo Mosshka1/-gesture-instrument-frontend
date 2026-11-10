@@ -15,6 +15,7 @@ function Footer() {
         <b>Порада: {tip.name}</b>
         <p>{tip.tip}</p>
         <Link to="/modes">Усі режими</Link>
+        <p className="legal-mini"><Link to="/privacy">Конфіденційність</Link> · <Link to="/terms">Умови</Link></p>
       </div>
       <div className="foot-big" aria-hidden="true">
         Gesture<br />Sound
