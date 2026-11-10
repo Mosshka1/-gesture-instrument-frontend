@@ -10,6 +10,7 @@ declare global {
 }
 
 export type CameraStatus = 'starting' | 'ready' | 'error';
+export type CameraProblem = 'library' | 'camera' | null;
 
 type FrameCallback = (handsFound: any[][], ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void;
 
@@ -25,6 +26,7 @@ export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
   const [status, setStatus] = useState<CameraStatus>('starting');
   const [fps, setFps] = useState(0);
   const [aspect, setAspect] = useState(4 / 3);
+  const [problem, setProblem] = useState<CameraProblem>(null);
 
   // Поріг упевненості можна міняти "на льоту"
   useEffect(() => {
@@ -41,6 +43,8 @@ export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
     let lastFpsTime = performance.now();
 
     if (!window.Hands || !window.Camera) {
+      // скрипти MediaPipe не завантажились (немає інтернету або CDN заблоковано)
+      setProblem('library');
       setStatus('error');
       return;
     }
@@ -112,7 +116,10 @@ export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
         height: 480,
       });
       Promise.resolve(cameraInstance.start()).catch(() => {
-        if (isActive) setStatus('error');
+        if (isActive) {
+          setProblem('camera');
+          setStatus('error');
+        }
       });
     }
 
@@ -120,9 +127,12 @@ export function useHandTracking(onFrame: FrameCallback, confidence = 60) {
       isActive = false;
       handsRef.current = null;
       cameraInstance?.stop();
+      // гарантовано гасимо камеру (індикатор поруч із об’єктивом), навіть якщо stop() не зачепив потік
+      const stream = videoRef.current?.srcObject as MediaStream | null;
+      stream?.getTracks().forEach((t) => t.stop());
       hands.close?.();
     };
   }, []);
 
-  return { videoRef, canvasRef, status, fps, aspect };
+  return { videoRef, canvasRef, status, fps, aspect, problem };
 }

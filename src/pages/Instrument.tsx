@@ -84,6 +84,8 @@ function Instrument() {
   const instRef = useRef<GainNode | null>(null);
   const looperRef = useRef<Looper | null>(null);
   const looperSaveTimer = useRef(0);
+  const looperSavePending = useRef(false);
+  const looperLoaded = useRef(false);
   const [savedLayers, setSavedLayers] = useState(0);
   useEffect(() => { loadLooper().then((s) => setSavedLayers(s?.layers.length ?? 0)); }, []);
   const wetRef = useRef<GainNode | null>(null);
@@ -109,7 +111,7 @@ function Instrument() {
   const meta = getModeMeta(modeId);
 
   // ---------- трекінг руки ----------
-  const { videoRef, canvasRef, status, fps, aspect } = useHandTracking((handsLm, ctx2d, canvas) => {
+  const { videoRef, canvasRef, status, fps, aspect, problem } = useHandTracking((handsLm, ctx2d, canvas) => {
     const now = performance.now();
     lastLandmarksRef.current = handsLm.length ? handsLm[0] : null;
     const hands = trackerRef.current.process(handsLm, calRef.current, now);
@@ -291,13 +293,16 @@ function Instrument() {
       // зберігаємо стан лупера, щоб він пережив оновлення сторінки
       if (lp.phase === 'playing' || lp.phase === 'idle') {
         window.clearTimeout(looperSaveTimer.current);
+        looperSavePending.current = true;
         looperSaveTimer.current = window.setTimeout(() => {
+          looperSavePending.current = false;
           if (looperRef.current === lp) saveLooper(lp.snapshot());
         }, 400);
       }
     });
     looperRef.current = lp;
     loadLooper().then((saved) => {
+      looperLoaded.current = true;
       if (saved && looperRef.current === lp) lp.restore(saved);
     });
     setLooper(lp);
@@ -470,7 +475,11 @@ function Instrument() {
         // ігноруємо
       }
       bgSourceRef.current?.src.stop?.();
-      looperRef.current?.dispose();
+      // якщо останні зміни лупера ще не встигли зберегтись — зберігаємо перед виходом
+      const lpNow = looperRef.current;
+      if (lpNow && looperSavePending.current && looperLoaded.current) saveLooper(lpNow.snapshot());
+      window.clearTimeout(looperSaveTimer.current);
+      lpNow?.dispose();
       looperRef.current = null;
       audioCtxRef.current?.close().catch(() => {});
       audioCtxRef.current = null;
@@ -608,6 +617,17 @@ function Instrument() {
       setRecSaving(false);
     }
   };
+
+  // не губимо незбережений запис, якщо випадково закрито або оновлено вкладку
+  useEffect(() => {
+    if (!isRecording && !pendingRec) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isRecording, pendingRec]);
 
   // не даємо екрану телефона згасати під час гри
   useEffect(() => {
@@ -826,8 +846,12 @@ function Instrument() {
             {status === 'error' && (
               <div className="stage-overlay">
                 <div>
-                  <h3>Камера недоступна</h3>
-                  <p>Дозволь доступ до камери в браузері (значок біля адреси) і онови сторінку. Також перевір, що камеру не використовує інша програма.</p>
+                  <h3>{problem === 'library' ? 'Не завантажився трекінг руки' : 'Камера недоступна'}</h3>
+                  <p>
+                    {problem === 'library'
+                      ? 'Модуль розпізнавання руки не завантажився. Перевір інтернет, вимкни блокувальники реклами для цього сайту й онови сторінку.'
+                      : 'Дозволь доступ до камери в браузері (значок біля адреси) і онови сторінку. Також перевір, що камеру не використовує інша програма.'}
+                  </p>
                   <button className="btn" onClick={() => window.location.reload()}>
                     Оновити сторінку
                   </button>
