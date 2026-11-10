@@ -5,6 +5,7 @@ export const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined)
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 90000, // сервер на безкоштовному тарифі може прокидатись до хвилини
 });
 
 // Токен підставляється автоматично до кожного запиту
@@ -27,6 +28,11 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       localStorage.removeItem('activePreset');
       void saveLooper(null);
+      try {
+        sessionStorage.setItem('authNotice', 'expired');
+      } catch {
+        // сховище недоступне — просто без повідомлення
+      }
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -58,7 +64,17 @@ export type ApiRecording = {
   mode: string | null;
   durationSec: number | null;
   sizeBytes: number | null;
+  shareToken?: string | null;
   createdAt: string;
+};
+
+export type SharedRecording = {
+  name: string;
+  mode: string | null;
+  durationSec: number | null;
+  fileName: string;
+  createdAt: string;
+  author: string | null;
 };
 
 export type ApiSound = {
@@ -83,7 +99,18 @@ export type FreesoundResult = {
 };
 
 export function getErrorMessage(err: any, fallback = 'Щось пішло не так'): string {
-  return err?.response?.data?.error || fallback;
+  const fromServer = err?.response?.data?.error;
+  if (fromServer) return fromServer;
+  const status = err?.response?.status;
+  if (!err?.response) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return 'Немає інтернету. Перевір зʼєднання і спробуй ще раз';
+    if (err?.code === 'ECONNABORTED') return 'Сервер довго не відповідає. Спробуй ще раз за хвилину';
+    return 'Не вдалось звʼязатись із сервером. Перевір інтернет і спробуй ще раз';
+  }
+  if (status === 413) return 'Файл завеликий';
+  if (status === 429) return 'Забагато спроб. Зачекай кілька хвилин';
+  if (status >= 500) return 'Сервер тимчасово недоступний. Спробуй ще раз за хвилину';
+  return fallback;
 }
 
 // ---------- Авторизація ----------
@@ -180,6 +207,20 @@ export async function uploadRecording(name: string, blob: Blob, mode?: string, d
 
 export async function renameRecording(id: number, name: string): Promise<ApiRecording> {
   const response = await api.put(`/recordings/${id}`, { name });
+  return response.data.recording;
+}
+
+export async function shareRecording(id: number): Promise<string> {
+  const response = await api.post(`/recordings/${id}/share`);
+  return response.data.shareToken as string;
+}
+
+export async function unshareRecording(id: number) {
+  await api.delete(`/recordings/${id}/share`);
+}
+
+export async function getSharedRecording(token: string): Promise<SharedRecording> {
+  const response = await api.get(`/share/${encodeURIComponent(token)}`);
   return response.data.recording;
 }
 

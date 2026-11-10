@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 import CalibrationWizard from '../components/CalibrationWizard';
+import { useToast } from '../components/Toast';
 import LooperPanel from '../components/LooperPanel';
 import ModeGuide from '../components/ModeGuide';
 import SoundPanel from '../components/SoundPanel';
@@ -10,6 +11,8 @@ import Sheet from '../components/Sheet';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { Looper } from '../audio/looper';
 import { loadLooper, saveLooper } from '../audio/looperStore';
+import { loadStats, saveStats } from '../lib/stats';
+import { computeAchievements } from '../lib/achievements';
 import { IconFullscreen, IconGear } from '../components/Icons';
 import { useHandTracking } from '../hooks/useHandTracking';
 import { HandTracker } from '../audio/features';
@@ -64,12 +67,7 @@ function Instrument() {
   const [pendingRec, setPendingRec] = useState<{ blob: Blob; duration: number; mode: ModeId } | null>(null);
   const [recName, setRecName] = useState('');
   const [recSaving, setRecSaving] = useState(false);
-  const [notice, setNotice] = useState('');
-  useEffect(() => {
-    if (!notice) return;
-    const t = setTimeout(() => setNotice(''), 7000);
-    return () => clearTimeout(t);
-  }, [notice]);
+  const toast = useToast();
   const [looper, setLooper] = useState<Looper | null>(null);
   const [looperVersion, setLooperVersion] = useState(0);
 
@@ -83,6 +81,27 @@ function Instrument() {
   const settingsRef = useRef<HTMLDivElement | null>(null);
   const instRef = useRef<GainNode | null>(null);
   const looperRef = useRef<Looper | null>(null);
+  // ---- статистика гри та досягнення (зберігаються лише в браузері) ----
+  const statsRef = useRef(loadStats());
+  const modeIdRef = useRef(modeId);
+  modeIdRef.current = modeId;
+  const announceNew = () => {
+    const s = statsRef.current;
+    const list = computeAchievements({ stats: s, presets: 0, recordings: 0, shared: 0, sounds: 0, calibrated: false }).filter((a) => a.local);
+    for (const a of list) {
+      if (a.done && !s.unlocked.includes(a.id)) {
+        s.unlocked.push(a.id);
+        toast.success(`Нове досягнення: «${a.title}»`);
+      }
+    }
+  };
+  const noteLayers = (n: number) => {
+    if (n > statsRef.current.maxLayers) {
+      statsRef.current.maxLayers = n;
+      announceNew();
+      saveStats(statsRef.current);
+    }
+  };
   const looperSaveTimer = useRef(0);
   const looperSavePending = useRef(false);
   const looperLoaded = useRef(false);
@@ -290,6 +309,7 @@ function Instrument() {
     instRef.current = instOut;
     const lp = new Looper(ctx, instOut, master, () => {
       setLooperVersion((v) => v + 1);
+      noteLayers(lp.layerList.length);
       // зберігаємо стан лупера, щоб він пережив оновлення сторінки
       if (lp.phase === 'playing' || lp.phase === 'idle') {
         window.clearTimeout(looperSaveTimer.current);
@@ -373,7 +393,7 @@ function Instrument() {
         setSampleVersion((v) => v + 1);
       })
       .catch(() => {
-        if (!cancelled) setNotice('Не вдалось завантажити власний звук — граємо стандартним');
+        if (!cancelled) toast.error('Не вдалось завантажити власний звук — граємо стандартним');
       });
     return () => {
       cancelled = true;
@@ -418,7 +438,7 @@ function Instrument() {
         bgSourceRef.current = { src, gain };
       })
       .catch(() => {
-        if (!cancelled) setNotice('Не вдалось завантажити фоновий звук');
+        if (!cancelled) toast.error('Не вдалось завантажити фоновий звук');
       });
     return () => {
       cancelled = true;
@@ -500,7 +520,7 @@ function Instrument() {
     const master = outRef.current;
     if (!ctx || !master || recorderRef.current?.state === 'recording') return;
     if (typeof MediaRecorder === 'undefined') {
-      setNotice('Цей браузер не підтримує запис звуку');
+      toast.error('Цей браузер не підтримує запис звуку');
       return;
     }
 
@@ -523,7 +543,7 @@ function Instrument() {
       recorder = new MediaRecorder(dest.stream, mimeType ? { mimeType, audioBitsPerSecond: 128000 } : undefined);
     } catch {
       master.disconnect(dest);
-      setNotice('Не вдалось почати запис у цьому браузері');
+      toast.error('Не вдалось почати запис у цьому браузері');
       return;
     }
     recChunksRef.current = [];
@@ -534,7 +554,7 @@ function Instrument() {
       if (e.data.size > 0) recChunksRef.current.push(e.data);
     };
     recorder.onerror = () => {
-      setNotice('Під час запису сталась помилка');
+      toast.error('Під час запису сталась помилка');
       setIsRecording(false);
     };
     recorder.onstop = () => {
@@ -548,7 +568,7 @@ function Instrument() {
       }
       recorderRef.current = null;
       if (blob.size < 1024 || Date.now() - recStartRef.current < 800) {
-        setNotice('Запис вийшов занадто коротким — спробуй ще раз');
+        toast.error('Запис вийшов занадто коротким — спробуй ще раз');
         return;
       }
       setRecName('Моя мелодія');
@@ -566,7 +586,7 @@ function Instrument() {
   const saveLooperMix = () => {
     const res = looperRef.current?.exportWav();
     if (!res) {
-      setNotice('У лупері немає активних шарів для запису');
+      toast.error('У лупері немає активних шарів для запису');
       return;
     }
     setRecName('Мій лупер');
@@ -584,7 +604,7 @@ function Instrument() {
       const sec = Math.round((Date.now() - recStartRef.current) / 1000);
       setRecSeconds(sec);
       if (sec >= MAX_REC_SECONDS) {
-        setNotice('Досягнуто ліміт запису — 5 хвилин. Запис зупинено.');
+        toast.info('Досягнуто ліміт запису — 5 хвилин. Запис зупинено.');
         stopRecording();
       }
     }, 500);
@@ -609,14 +629,37 @@ function Instrument() {
     try {
       await uploadRecording(recName.trim() || 'Без назви', pendingRec.blob, pendingRec.mode, pendingRec.duration);
       setPendingRec(null);
-      setNotice('Запис збережено! Він з’явиться у розділі «Записи».');
+      toast.success('Запис збережено! Він з’явиться у розділі «Записи».');
       confetti();
     } catch (err) {
-      setNotice(getErrorMessage(err, 'Не вдалось зберегти запис'));
+      toast.error(getErrorMessage(err, 'Не вдалось зберегти запис'));
     } finally {
       setRecSaving(false);
     }
   };
+
+  // рахуємо час гри: лише коли звук увімкнено, вкладка активна й рука в кадрі
+  useEffect(() => {
+    if (!audioStarted) return;
+    statsRef.current.sessions += 1;
+    saveStats(statsRef.current);
+    const timer = setInterval(() => {
+      if (document.visibilityState !== 'visible' || !liveRef.current.hands) return;
+      const s = statsRef.current;
+      s.playSeconds += 1;
+      const id = modeIdRef.current;
+      s.modeSeconds[id] = (s.modeSeconds[id] || 0) + 1;
+      if (s.playSeconds % 5 === 0) {
+        announceNew();
+        saveStats(s);
+      }
+    }, 1000);
+    return () => {
+      clearInterval(timer);
+      saveStats(statsRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioStarted]);
 
   // не губимо незбережений запис, якщо випадково закрито або оновлено вкладку
   useEffect(() => {
@@ -681,7 +724,7 @@ function Instrument() {
       const preset = await createPreset(presetName.trim(), modeId, buildSettings());
       setSessionPreset({ id: preset.id, name: preset.name });
       setShowSave(false);
-      setNotice(`Пресет «${preset.name}» збережено`);
+      toast.success(`Пресет «${preset.name}» збережено`);
       confetti();
     } catch (err) {
       setSaveError(getErrorMessage(err));
@@ -698,7 +741,7 @@ function Instrument() {
       const preset = await updatePreset(sessionPreset.id, { soundType: modeId, settings: buildSettings() });
       await markPresetUsed(preset.id).catch(() => {});
       setShowSave(false);
-      setNotice(`Пресет «${preset.name}» оновлено`);
+      toast.success(`Пресет «${preset.name}» оновлено`);
     } catch (err) {
       setSaveError(getErrorMessage(err));
     } finally {
@@ -714,7 +757,7 @@ function Instrument() {
       try {
         await persistCalibration(next);
       } catch {
-        setNotice('Калібрування діє зараз, але не вдалось зберегти його в акаунті');
+        toast.error('Калібрування діє зараз, але не вдалось зберегти його в акаунті');
       }
     },
     []
@@ -791,14 +834,6 @@ function Instrument() {
       </PageHeader>
 
       <div className="page-body">
-        {notice && (
-          <div className="toast" role="status">
-            <span>{notice}</span>
-            <button className="icon-btn" onClick={() => setNotice('')} aria-label="Закрити">
-              <Glyph name="close" />
-            </button>
-          </div>
-        )}
 
         <div className="play-grid">
           {/* ---------- сцена з камерою ---------- */}
@@ -1002,6 +1037,7 @@ function Instrument() {
       {showSave && (
         <Modal
           title="Зберегти пресет"
+          busy={saving}
           subtitle={`Режим: ${meta.name}. Збережуться гама, тональність, реверб, вибрані звуки та чутливість.`}
           onClose={() => setShowSave(false)}
           actions={
@@ -1051,6 +1087,7 @@ function Instrument() {
       {pendingRec && (
         <Modal
           title="Зберегти запис"
+          busy={recSaving}
           subtitle={`Тривалість ${formatDuration(pendingRec.duration)} · ${getModeMeta(pendingRec.mode).name}`}
           onClose={() => setPendingRec(null)}
           actions={

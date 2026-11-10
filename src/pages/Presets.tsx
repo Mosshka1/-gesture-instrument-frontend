@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
+import { useToast } from '../components/Toast';
 import Modal from '../components/Modal';
 import Skeleton from '../components/Skeleton';
 import { IconEdit, IconTrash } from '../components/Icons';
@@ -54,6 +55,7 @@ function Presets() {
   const navigate = useNavigate();
   const [presets, setPresets] = useState<ApiPreset[]>([]);
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('recent');
@@ -102,8 +104,9 @@ function Presets() {
       const updated = await updatePreset(p.id, { favorite: !p.favorite });
       if (updated.favorite) confetti(undefined, undefined, 24);
       setPresets((list) => list.map((x) => (x.id === p.id ? updated : x)));
+      toast.success(updated.favorite ? 'Додано в обране' : 'Прибрано з обраного');
     } catch (err) {
-      setError(getErrorMessage(err));
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -142,6 +145,7 @@ function Presets() {
           reverb: editor.reverb,
         });
         setPresets((list) => [created, ...list]);
+        toast.success(`Пресет «${created.name}» створено`);
       } else {
         const old = presets.find((p) => p.id === editor.id);
         const updated = await updatePreset(editor.id, {
@@ -150,6 +154,7 @@ function Presets() {
           settings: { ...(old?.settings || {}), mode: editor.mode, scale: editor.scale, root: editor.root, reverb: editor.reverb },
         });
         setPresets((list) => list.map((x) => (x.id === updated.id ? updated : x)));
+        toast.success('Зміни збережено');
       }
       setEditor(null);
     } catch (err) {
@@ -166,8 +171,9 @@ function Presets() {
       await deletePreset(toDelete.id);
       setPresets((list) => list.filter((p) => p.id !== toDelete.id));
       setToDelete(null);
+      toast.success('Пресет видалено');
     } catch (err) {
-      setError(getErrorMessage(err));
+      toast.error(getErrorMessage(err));
       setToDelete(null);
     } finally {
       setBusy(false);
@@ -295,6 +301,7 @@ function Presets() {
         <Modal
           title={editor.id === null ? 'Новий пресет' : 'Редагувати пресет'}
           subtitle="Решта налаштувань (звуки, чутливість) зберігаються зі сторінки «Грати»."
+          busy={busy}
           onClose={() => setEditor(null)}
           actions={
             <>
@@ -360,6 +367,7 @@ function Presets() {
         <Modal
           title="Видалити пресет?"
           subtitle={`«${toDelete.name}» буде видалено назавжди.`}
+          busy={busy}
           onClose={() => setToDelete(null)}
           actions={
             <>

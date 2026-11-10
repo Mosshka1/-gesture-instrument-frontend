@@ -8,7 +8,17 @@ import ThemeToggle from '../components/ThemeToggle';
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    try {
+      if (sessionStorage.getItem('authNotice') === 'expired') {
+        sessionStorage.removeItem('authNotice');
+        return 'Сесія завершилась. Увійди ще раз.';
+      }
+    } catch {
+      // ігноруємо
+    }
+    return '';
+  });
   const [loading, setLoading] = useState(false);
   const [slow, setSlow] = useState(false);
   const navigate = useNavigate();

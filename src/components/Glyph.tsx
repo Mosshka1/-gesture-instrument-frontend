@@ -24,6 +24,8 @@ const P: Record<string, ReactNode> = {
   choir: <><circle cx="12" cy="12" r="3" /><path d="M6.5 6.5a8 8 0 000 11M17.5 6.5a8 8 0 010 11" /></>,
   wobble: <><path d="M2 12c2.5-8 4.5-8 7 0s4.5 8 7 0M16 12c1.2-4 2.2-4 3.5 0S22 16 22 12" /></>,
   // інтерфейс
+  share: <><circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4" /></>,
+  trophy: <><path d="M8 4h8v5a4 4 0 01-8 0z" /><path d="M8 6H5a3 3 0 003 4M16 6h3a3 3 0 01-3 4" /><path d="M12 13v4M9 20h6M10 17h4" /></>,
   reverb: <><path d="M3 20h18M5 20V9l7-5 7 5v11" /><path d="M9 20v-6h6v6" /></>,
   echo: <><circle cx="8" cy="12" r="2" /><path d="M13 7a7 7 0 010 10M17 4a11 11 0 010 16" /></>,
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,

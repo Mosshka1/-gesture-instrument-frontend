@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import { IconTrash } from '../components/Icons';
+import { useToast } from '../components/Toast';
 import { addFreesoundSound, deleteSound, getErrorMessage, getSounds, searchFreesound, uploadSound, uploadUrl } from '../api';
 import type { ApiSound, FreesoundResult } from '../api';
 import { formatBytes } from '../lib/format';
@@ -23,6 +24,7 @@ function SoundSection({
 }) {
   const [name, setName] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const toast = useToast();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [playingId, setPlayingId] = useState<number | null>(null);
@@ -58,6 +60,7 @@ function SoundSection({
       setName('');
       setFile(null);
       if (inputRef.current) inputRef.current.value = '';
+      toast.success('Звук додано');
       onChanged();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -76,9 +79,10 @@ function SoundSection({
       // якщо цей звук був вибраний — прибираємо вибір
       if (localStorage.getItem('selectedSoundId') === String(s.id)) localStorage.setItem('selectedSoundId', '');
       if (localStorage.getItem('selectedBackgroundId') === String(s.id)) localStorage.setItem('selectedBackgroundId', '');
+      toast.success('Звук видалено');
       onChanged();
     } catch (err) {
-      setError(getErrorMessage(err));
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -177,6 +181,7 @@ function FreesoundLibrary({ onAdded }: { onAdded: () => void }) {
   const [hasMore, setHasMore] = useState(false);
   const [searched, setSearched] = useState('');
   const [busy, setBusy] = useState(false);
+  const toast = useToast();
   const [error, setError] = useState('');
   const [addedIds, setAddedIds] = useState<number[]>([]);
   const [playingId, setPlayingId] = useState<number | null>(null);
@@ -218,9 +223,10 @@ function FreesoundLibrary({ onAdded }: { onAdded: () => void }) {
     try {
       await addFreesoundSound(r, type);
       setAddedIds((a) => [...a, r.id]);
+      toast.success('Звук додано до твоєї бібліотеки');
       onAdded();
     } catch (err) {
-      setError(getErrorMessage(err));
+      toast.error(getErrorMessage(err));
     }
   };
 

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
+import { useToast } from '../components/Toast';
 import Modal from '../components/Modal';
 import Skeleton from '../components/Skeleton';
 import { IconDownload, IconEdit, IconTrash } from '../components/Icons';
+import { shareRecording, unshareRecording } from '../api';
 import { deleteRecording, getErrorMessage, getRecordings, renameRecording, uploadUrl } from '../api';
 import type { ApiRecording } from '../api';
 import { MODES, getModeMeta } from '../audio/modes';
@@ -33,6 +35,9 @@ function Recordings() {
   const navigate = useNavigate();
   const [items, setItems] = useState<ApiRecording[]>([]);
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
+  const [sharing, setSharing] = useState<{ rec: ApiRecording; url: string } | null>(null);
+  const [shareBusy, setShareBusy] = useState(false);
   const [error, setError] = useState('');
   const [playingId, setPlayingId] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
@@ -113,7 +118,46 @@ function Recordings() {
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
-      setError('Не вдалось завантажити файл');
+      toast.error('Не вдалось завантажити файл');
+    }
+  };
+
+  const shareUrl = (token: string) => `${window.location.origin}/s/${token}`;
+
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Посилання скопійовано');
+    } catch {
+      toast.info('Не вдалось скопіювати автоматично. Виділи посилання й скопіюй вручну');
+    }
+  };
+
+  const openShare = async (rec: ApiRecording) => {
+    setShareBusy(true);
+    try {
+      const token = rec.shareToken || (await shareRecording(rec.id));
+      setItems((list) => list.map((r) => (r.id === rec.id ? { ...r, shareToken: token } : r)));
+      setSharing({ rec: { ...rec, shareToken: token }, url: shareUrl(token) });
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Не вдалось створити посилання'));
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
+  const stopShare = async () => {
+    if (!sharing) return;
+    setShareBusy(true);
+    try {
+      await unshareRecording(sharing.rec.id);
+      setItems((list) => list.map((r) => (r.id === sharing.rec.id ? { ...r, shareToken: null } : r)));
+      setSharing(null);
+      toast.success('Доступ за посиланням закрито');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setShareBusy(false);
     }
   };
 
@@ -125,8 +169,9 @@ function Recordings() {
       const updated = await renameRecording(renaming.id, newName.trim());
       setItems((list) => list.map((r) => (r.id === updated.id ? updated : r)));
       setRenaming(null);
+      toast.success('Запис перейменовано');
     } catch (err) {
-      setError(getErrorMessage(err));
+      toast.error(getErrorMessage(err));
       setRenaming(null);
     } finally {
       setBusy(false);
@@ -143,8 +188,9 @@ function Recordings() {
       }
       await deleteRecording(toDelete.id);
       setItems((list) => list.filter((r) => r.id !== toDelete.id));
+      toast.success('Запис видалено');
     } catch (err) {
-      setError(getErrorMessage(err));
+      toast.error(getErrorMessage(err));
     } finally {
       setToDelete(null);
       setBusy(false);
@@ -236,6 +282,9 @@ function Recordings() {
                   </span>
 
                   <div className="actions">
+                    <button className={'icon-btn' + (rec.shareToken ? ' active' : '')} title={rec.shareToken ? 'Запис доступний за посиланням' : 'Поділитися посиланням'} aria-label="Поділитися" disabled={shareBusy} onClick={() => openShare(rec)}>
+                      <Glyph name="share" />
+                    </button>
                     <button className="icon-btn" title="Завантажити" onClick={() => downloadRec(rec)}>
                       <IconDownload />
                     </button>
@@ -260,9 +309,35 @@ function Recordings() {
         )}
       </div>
 
+      {sharing && (
+        <Modal
+          title="Поділитися записом"
+          subtitle={`«${sharing.rec.name}» зможе послухати кожен, хто має це посилання. Входити в акаунт не потрібно.`}
+          busy={shareBusy}
+          onClose={() => setSharing(null)}
+          actions={
+            <>
+              <button className="btn danger" onClick={stopShare} disabled={shareBusy}>
+                Закрити доступ
+              </button>
+              <button className="btn primary" onClick={() => copyText(sharing.url)}>
+                Копіювати посилання
+              </button>
+            </>
+          }
+        >
+          <label className="field">Посилання</label>
+          <input className="input" value={sharing.url} readOnly autoFocus onFocus={(e) => e.currentTarget.select()} />
+          <p className="hint" style={{ marginBottom: 0 }}>
+            Людина побачить лише назву, режим, тривалість і твоє ім’я (перше слово). Пресети та інші записи лишаються приватними. Закрий доступ, і посилання перестане працювати.
+          </p>
+        </Modal>
+      )}
+
       {renaming && (
         <Modal
           title="Перейменувати запис"
+          busy={busy}
           onClose={() => setRenaming(null)}
           actions={
             <>
@@ -284,6 +359,7 @@ function Recordings() {
         <Modal
           title="Видалити запис?"
           subtitle={`«${toDelete.name}» буде видалено назавжди.`}
+          busy={busy}
           onClose={() => setToDelete(null)}
           actions={
             <>

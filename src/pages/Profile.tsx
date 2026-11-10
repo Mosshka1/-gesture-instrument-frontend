@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
+import { useToast } from '../components/Toast';
 import { saveLooper } from '../audio/looperStore';
-import { deleteAccount, getErrorMessage, getMe, getPresets, getRecordings, updateMe } from '../api';
+import { deleteAccount, getErrorMessage, getMe, getPresets, getRecordings, getSounds, updateMe } from '../api';
+import { loadStats, clearStats, formatPlayTime } from '../lib/stats';
+import { computeAchievements } from '../lib/achievements';
+import { MODES } from '../audio/modes';
 import type { ApiUser } from '../api';
 import type { Calibration } from '../audio/features';
 import { fetchCalibration, loadCachedCalibration, persistCalibration } from '../lib/calibration';
@@ -12,6 +16,7 @@ import Glyph from '../components/Glyph';
 
 function Profile() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [user, setUser] = useState<ApiUser | null>(null);
   const [name, setName] = useState('');
   const [editing, setEditing] = useState(false);
@@ -23,6 +28,8 @@ function Profile() {
   const [confirmText, setConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [counts, setCounts] = useState({ presets: 0, takes: 0 });
+  const [extra, setExtra] = useState({ shared: 0, sounds: 0 });
+  const [stats] = useState(() => loadStats());
   const loadedRef = useRef(false);
   const timerRef = useRef<number | null>(null);
 
@@ -34,7 +41,13 @@ function Profile() {
       })
       .catch((err) => setError(getErrorMessage(err, 'Не вдалось завантажити профіль')));
     getPresets().then((p) => setCounts((c) => ({ ...c, presets: p.length }))).catch(() => {});
-    getRecordings().then((r) => setCounts((c) => ({ ...c, takes: r.length }))).catch(() => {});
+    getRecordings()
+      .then((r) => {
+        setCounts((c) => ({ ...c, takes: r.length }));
+        setExtra((e) => ({ ...e, shared: r.filter((x) => x.shareToken).length }));
+      })
+      .catch(() => {});
+    getSounds().then((s) => setExtra((e) => ({ ...e, sounds: s.length }))).catch(() => {});
     fetchCalibration().then((c) => {
       setCal(c);
       loadedRef.current = true;
@@ -54,7 +67,7 @@ function Profile() {
         await persistCalibration(next);
         setSaved(true);
       } catch {
-        setError('Не вдалось зберегти налаштування трекінгу');
+        toast.error('Не вдалось зберегти налаштування трекінгу');
       }
     }, 600);
   };
@@ -72,7 +85,7 @@ function Profile() {
       setUser(updated);
       localStorage.setItem('user', JSON.stringify({ id: updated.id, fullName: updated.fullName, email: updated.email }));
       setEditing(false);
-      setMsg('Ім’я оновлено');
+      toast.success('Ім’я оновлено');
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -82,6 +95,7 @@ function Profile() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('activePreset');
+    clearStats();
     void saveLooper(null); // лупер належить користувачу: не лишаємо його наступному, хто увійде
   };
 
@@ -99,11 +113,23 @@ function Profile() {
       navigate('/login');
     } catch (err) {
       setShowDelete(false);
-      setError(getErrorMessage(err, 'Не вдалось видалити акаунт'));
+      toast.error(getErrorMessage(err, 'Не вдалось видалити акаунт'));
     } finally {
       setDeleting(false);
     }
   };
+
+  const achievements = computeAchievements({
+    stats,
+    presets: counts.presets,
+    recordings: counts.takes,
+    shared: extra.shared,
+    sounds: extra.sounds,
+    calibrated: cal.calibrated,
+  });
+  const triedModes = Object.keys(stats.modeSeconds).filter((id) => MODES.some((m) => m.id === id) && stats.modeSeconds[id] >= 5).length;
+  const topId = Object.keys(stats.modeSeconds).sort((a, b) => stats.modeSeconds[b] - stats.modeSeconds[a])[0];
+  const favoriteMode = topId ? MODES.find((m) => m.id === topId) : undefined;
 
   const memberSince = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' })
@@ -209,6 +235,46 @@ function Profile() {
               </button>
             </div>
 
+            <div className="card" id="stats" style={{ marginBottom: 20 }}>
+              <div className="panel-head">
+                <h2 className="card-title" style={{ margin: 0 }}>Твоя статистика</h2>
+                <span className="mini-tag">{achievements.filter((a) => a.done).length} / {achievements.length} досягнень</span>
+              </div>
+              <div className="calib-tiles" style={{ marginTop: 14 }}>
+                <div className="tile">
+                  <strong>{formatPlayTime(stats.playSeconds)}</strong>
+                  <small>Час гри</small>
+                </div>
+                <div className="tile">
+                  <strong>{stats.sessions}</strong>
+                  <small>Сесій</small>
+                </div>
+                <div className="tile">
+                  <strong>{favoriteMode ? favoriteMode.name : '—'}</strong>
+                  <small>Улюблений режим</small>
+                </div>
+                <div className="tile">
+                  <strong>{triedModes} / {MODES.length}</strong>
+                  <small>Режимів випробувано</small>
+                </div>
+              </div>
+              <p className="hint" style={{ margin: '10px 0 0' }}>Час гри рахується на цьому пристрої, коли рука в кадрі.</p>
+
+              <div className="crumb" style={{ margin: '24px 0 10px' }}>Досягнення</div>
+              <div className="ach-grid">
+                {achievements.map((a) => (
+                  <div key={a.id} className={'ach' + (a.done ? ' done' : '')}>
+                    <div className="ach-ico"><Glyph name={a.done ? 'trophy' : a.icon} /></div>
+                    <div>
+                      <strong>{a.title}</strong>
+                      <small>{a.desc}</small>
+                      {!a.done && a.progress && <span className="ach-prog">{a.progress}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="card" id="tracking">
               <div className="panel-head">
                 <h2 className="card-title" style={{ margin: 0 }}>Чутливість і калібрування трекінгу</h2>
@@ -271,6 +337,7 @@ function Profile() {
         <Modal
           title="Видалити акаунт?"
           subtitle="Усі твої пресети, записи та звуки буде видалено назавжди."
+          busy={deleting}
           onClose={() => !deleting && setShowDelete(false)}
           actions={
             <>

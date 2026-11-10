@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Tutorial from './pages/Tutorial';
 import Recordings from './pages/Recordings';
 import Sounds from './pages/Sounds';
+import SharedRecording from './pages/SharedRecording';
 import Legal from './pages/Legal';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -26,6 +27,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/privacy" element={<Legal />} />
         <Route path="/terms" element={<Legal />} />
+        <Route path="/s/:token" element={<SharedRecording />} />
 
         <Route
           element={
