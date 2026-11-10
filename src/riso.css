@@ -2326,3 +2326,10 @@ input[type='range'] {
 .legal-mini { font-size: 13px; margin-top: 6px; }
 .legal-mini a { color: inherit; text-decoration: underline; }
 @media (max-width: 600px) { .legal { padding: 22px 18px; } .legal h1 { font-size: 21px; } }
+
+/* ---------- помилки полів форми ---------- */
+.app-shell .input.invalid, .auth-page .input.invalid { border-color: #c0262d; }
+.field-error { color: #c0262d; font-size: 13px; margin-top: 6px; }
+.field-hint { color: var(--ink-soft); font-size: 13px; margin-top: 6px; }
+:root[data-theme='dark'] .field-error { color: #ff8a8f; }
+:root[data-theme='dark'] .auth-page .input.invalid { border-color: #ff8a8f; }

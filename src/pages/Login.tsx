@@ -19,7 +19,7 @@ function Login() {
     setLoading(true);
     const slowTimer = setTimeout(() => setSlow(true), 4000);
     try {
-      const data = await loginUser(email, password);
+      const data = await loginUser(email.trim(), password);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate(localStorage.getItem('tutorialCompleted') ? '/play' : '/tutorial');

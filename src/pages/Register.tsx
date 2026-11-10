@@ -5,6 +5,27 @@ import GoogleButton from '../components/GoogleButton';
 import AuthHero from '../components/AuthHero';
 import ThemeToggle from '../components/ThemeToggle';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+type Fields = { fullName: string; email: string; password: string };
+
+function validate({ fullName, email, password }: Fields): Partial<Record<keyof Fields, string>> {
+  const errs: Partial<Record<keyof Fields, string>> = {};
+  const name = fullName.trim();
+  if (!name) errs.fullName = 'Вкажи своє ім’я';
+  else if (name.length < 2) errs.fullName = 'Ім’я має містити щонайменше 2 символи';
+  else if (name.length > 60) errs.fullName = 'Ім’я занадто довге (до 60 символів)';
+
+  if (!email.trim()) errs.email = 'Вкажи email';
+  else if (!EMAIL_RE.test(email.trim())) errs.email = 'Схоже, email введено з помилкою. Приклад: anna@gmail.com';
+
+  if (!password) errs.password = 'Придумай пароль';
+  else if (password.length < 8) errs.password = 'Пароль має містити щонайменше 8 символів';
+  else if (new TextEncoder().encode(password).length > 72) errs.password = 'Пароль занадто довгий';
+  else if (!/\p{L}/u.test(password) || !/\d/.test(password)) errs.password = 'Додай до пароля і літери, і цифри';
+  return errs;
+}
+
 function Register() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -12,15 +33,24 @@ function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [slow, setSlow] = useState(false);
+  const [touched, setTouched] = useState<Partial<Record<keyof Fields, boolean>>>({});
   const navigate = useNavigate();
+
+  const errs = validate({ fullName, email, password });
+  const touch = (k: keyof Fields) => setTouched((t) => ({ ...t, [k]: true }));
+  const shown = (k: keyof Fields) => (touched[k] ? errs[k] : undefined);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (Object.keys(errs).length) {
+      setTouched({ fullName: true, email: true, password: true });
+      return;
+    }
     setLoading(true);
     const slowTimer = setTimeout(() => setSlow(true), 4000);
     try {
-      const data = await registerUser(fullName, email, password);
+      const data = await registerUser(fullName.trim(), email.trim().toLowerCase(), password);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate(localStorage.getItem('tutorialCompleted') ? '/play' : '/tutorial');
@@ -37,7 +67,7 @@ function Register() {
     <div className="auth-page">
       <ThemeToggle floating />
       <div className="auth-left">
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="brand">
             <div className="logo-mark" />
             <div className="brand-name">
@@ -49,13 +79,16 @@ function Register() {
           <p className="lead">Зберігай власні пресети, записуй мелодії та налаштуй інструмент під свою руку.</p>
 
           <label className="field">Повне ім’я</label>
-          <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Анна Коваленко" required />
+          <input className={'input' + (shown('fullName') ? ' invalid' : '')} value={fullName} autoComplete="name" maxLength={60} onChange={(e) => setFullName(e.target.value)} onBlur={() => touch('fullName')} placeholder="Анна Коваленко" aria-invalid={!!shown('fullName')} />
+          {shown('fullName') && <div className="field-error">{shown('fullName')}</div>}
 
           <label className="field">Email</label>
-          <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="anna@studio.dev" required />
+          <input className={'input' + (shown('email') ? ' invalid' : '')} type="email" value={email} autoComplete="email" onChange={(e) => setEmail(e.target.value)} onBlur={() => touch('email')} placeholder="anna@studio.dev" aria-invalid={!!shown('email')} />
+          {shown('email') && <div className="field-error">{shown('email')}</div>}
 
           <label className="field">Пароль</label>
-          <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Придумай пароль" required />
+          <input className={'input' + (shown('password') ? ' invalid' : '')} type="password" value={password} autoComplete="new-password" onChange={(e) => setPassword(e.target.value)} onBlur={() => touch('password')} placeholder="Придумай пароль" aria-invalid={!!shown('password')} />
+          {shown('password') ? <div className="field-error">{shown('password')}</div> : <div className="field-hint">Щонайменше 8 символів, літери й цифри</div>}
 
           {error && <div className="error-box">{error}</div>}
           {slow && <div className="ok-box">Сервер прокидається після простою — це може тривати до хвилини. Зачекай, будь ласка…</div>}
